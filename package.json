@@ -1,0 +1,14 @@
+{
+  "name": "aleman-simultaneo",
+  "version": "1.0.0",
+  "description": "Traductor y analizador gramatical de alemán para estudiantes hispanohablantes",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node server/index.js --dev",
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

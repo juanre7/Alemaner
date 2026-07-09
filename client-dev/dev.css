@@ -1,0 +1,133 @@
+/* Consola de Telemetría — Modo Dev (§4.6). Estética retro de alto contraste. */
+
+.telemetry-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+.telemetry-wrap.open { grid-template-rows: 1fr; }
+.telemetry-inner { overflow: hidden; min-height: 0; }
+
+.telemetry {
+  margin-top: 20px;
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, Menlo, monospace;
+  font-size: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(2, 6, 23, 0.4);
+}
+
+.tl-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 12px; margin-bottom: 12px;
+  border-bottom: 1px solid #1e293b;
+}
+.tl-light {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #334155;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.tl-light.idle { background: #334155; }
+.tl-light.busy {
+  background: #fbbf24; box-shadow: 0 0 8px #fbbf24;
+  animation: tl-blink 0.8s ease-in-out infinite;
+}
+.tl-light.ok { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
+.tl-light.error { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.7); }
+@keyframes tl-blink { 50% { opacity: 0.4; } }
+
+.tl-title { font-weight: 700; letter-spacing: 0.2em; color: #e2e8f0; font-size: 12.5px; }
+.tl-direction { margin-left: auto; color: #fbbf24; font-size: 11.5px; }
+
+.tl-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  margin-bottom: 14px;
+}
+.tl-control { display: inline-flex; align-items: center; gap: 7px; color: #cbd5e1; font-size: 11.5px; }
+
+/* Toggle streaming */
+.tl-switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+.tl-switch input { opacity: 0; width: 0; height: 0; }
+.tl-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: #334155; border-radius: 999px; transition: background 0.2s;
+}
+.tl-slider::before {
+  content: ""; position: absolute; left: 2px; top: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #94a3b8; transition: transform 0.2s, background 0.2s;
+}
+.tl-switch input:checked + .tl-slider { background: #16a34a; }
+.tl-switch input:checked + .tl-slider::before { transform: translateX(16px); background: #fff; }
+
+.tl-select {
+  background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+  border-radius: 6px; padding: 4px 8px; font-family: inherit; font-size: 11.5px;
+}
+
+.tl-clear {
+  margin-left: auto;
+  background: none; border: 1px solid #334155; color: #94a3b8;
+  border-radius: 6px; padding: 4px 10px; font-family: inherit; font-size: 11px;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.tl-clear:hover { color: #f8fafc; border-color: #64748b; }
+
+/* Métricas de latencia */
+.tl-meters { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 14px; }
+.tl-meter .tl-meter-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+.tl-meter .tl-meter-value { font-size: 20px; font-weight: 700; color: #475569; }
+.tl-meter-value.fast { color: #4ade80; }
+.tl-meter-value.slow { color: #fbbf24; }
+.tl-meter-value.error { color: #f87171; }
+
+/* Gráfico de fases */
+.tl-section-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: #64748b; margin: 14px 0 8px;
+}
+.tl-chart svg { display: block; width: 100%; height: auto; }
+.tl-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tl-chip {
+  background: #1e293b; border: 1px solid #334155; border-radius: 6px;
+  padding: 3px 8px; font-size: 10.5px; color: #cbd5e1; white-space: nowrap;
+}
+.tl-chip .tl-delta { color: #fbbf24; }
+.tl-chip.error { border-color: #7f1d1d; color: #fca5a5; }
+.tl-empty { color: #475569; font-size: 11px; font-style: italic; }
+
+/* Logs */
+.tl-logs {
+  max-height: 180px; overflow-y: auto;
+  background: #020617; border: 1px solid #1e293b; border-radius: 8px;
+  padding: 8px 10px;
+}
+.tl-log { display: flex; gap: 8px; padding: 1.5px 0; line-height: 1.5; }
+.tl-log-time { color: #475569; flex: none; }
+.tl-log-msg { overflow-wrap: anywhere; }
+.tl-log.client .tl-log-msg { color: #94a3b8; }
+.tl-log.net .tl-log-msg { color: #60a5fa; }
+.tl-log.ok .tl-log-msg { color: #4ade80; }
+.tl-log.error .tl-log-msg { color: #f87171; }
+
+/* Payloads */
+.tl-payloads { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.tl-payload summary {
+  cursor: pointer; color: #cbd5e1; font-size: 11px; padding: 6px 8px;
+  background: #1e293b; border-radius: 6px; user-select: none;
+}
+.tl-payload[open] summary { border-radius: 6px 6px 0 0; }
+.tl-payload pre {
+  margin: 0; padding: 10px; max-height: 240px; overflow: auto;
+  background: #020617; border: 1px solid #1e293b; border-top: none;
+  border-radius: 0 0 6px 6px;
+  font-size: 11px; line-height: 1.55; white-space: pre;
+}
+.tl-json-key { color: #7dd3fc; }
+.tl-json-str { color: #bef264; }
+.tl-json-num { color: #fbbf24; }
+.tl-json-bool { color: #f472b6; }
+.tl-json-punct { color: #64748b; }
