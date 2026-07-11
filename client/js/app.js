@@ -131,7 +131,8 @@ async function runAnalysis(request) {
     bus.emit('complete', { elapsed, ttft, direction, resource: lastResourceTiming() });
   } catch (err) {
     // El texto de entrada se conserva intacto (§7); solo cambia el panel derecho.
-    renderError(err.message || 'Error inesperado', () => runAnalysis(state.lastRequest));
+    renderError(err.message || 'Error inesperado', () => runAnalysis(state.lastRequest),
+      { needsApiKey: err.code === 'NO_API_KEY' });
   } finally {
     setBusy(false);
   }

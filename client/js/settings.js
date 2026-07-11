@@ -8,6 +8,15 @@ export function getApiKey() {
   catch { return ''; }
 }
 
+export function setApiKey(value) {
+  try {
+    const trimmed = (value || '').trim();
+    if (trimmed) localStorage.setItem(KEY, trimmed);
+    else localStorage.removeItem(KEY);
+    return true;
+  } catch { return false; }
+}
+
 export function initSettings() {
   const backdrop = document.getElementById('settings-backdrop');
   const openBtn = document.getElementById('settings-btn');

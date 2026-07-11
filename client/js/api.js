@@ -180,7 +180,9 @@ async function analyzeDirect({ text, direction, model, apiKey }) {
   bus.emit('phase', { name: 'Peticion enviada', t: 0 });
 
   if (!apiKey) {
-    throw finishError('Para usar GitHub Pages sin servidor, guarda tu clave API en Ajustes.', 401, t0);
+    const err = finishError('Para usar GitHub Pages sin servidor, guarda tu clave API en Ajustes.', 401, t0);
+    err.code = 'NO_API_KEY';
+    throw err;
   }
 
   let rawText;

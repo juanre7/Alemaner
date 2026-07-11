@@ -3,6 +3,7 @@
 
 import * as speech from './speech.js';
 import { bus } from './telemetry.js';
+import { getApiKey, setApiKey } from './settings.js';
 
 const container = document.getElementById('results');
 
@@ -42,7 +43,7 @@ export function renderLoading() {
   container.append(card);
 }
 
-export function renderError(message, onRetry) {
+export function renderError(message, onRetry, opts = {}) {
   clear();
   const card = el('div', 'card result-error fade-up');
   const head = el('div', 'error-head');
@@ -50,11 +51,68 @@ export function renderError(message, onRetry) {
   head.append(el('h2', null, 'Error de análisis'));
   card.append(head);
   card.append(el('p', null, message));
+
+  // Cuando falta la clave API, ofrece meterla aquí mismo (§5.2, modo sin servidor).
+  if (opts.needsApiKey) card.append(buildInlineKey(onRetry));
+
   const retry = el('button', 'btn-retry', 'Reintentar traducción');
   retry.type = 'button';
   retry.addEventListener('click', onRetry);
   card.append(retry);
   container.append(card);
+}
+
+// Reinicia la animación de "inflado/desinflado" forzando un reflow entre quitar
+// y volver a poner la clase, de modo que se repita en cada intento fallido.
+function pulse(node) {
+  node.classList.remove('key-pulse');
+  void node.offsetWidth;
+  node.classList.add('key-pulse');
+}
+
+function buildInlineKey(onRetry) {
+  const box = el('div', 'inline-key');
+  box.append(el('p', 'inline-key-note',
+    'Esta versión funciona sin servidor, así que necesita tu propia clave API para ' +
+    'contactar con el modelo. Pégala aquí abajo: se guarda solo en este navegador ' +
+    '(localStorage) y nunca se comparte.'));
+
+  const row = el('div', 'inline-key-row');
+  const input = el('input', 'inline-key-input');
+  input.type = 'password';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.placeholder = 'sk-or-... / sk-ant-...';
+  input.value = getApiKey();
+
+  const save = el('button', 'btn-primary inline-key-save', 'Guardar y reintentar');
+  save.type = 'button';
+
+  const status = el('p', 'inline-key-status');
+  status.setAttribute('role', 'status');
+
+  const submit = () => {
+    const value = input.value.trim();
+    if (!value) {
+      status.textContent = 'Escribe tu clave para continuar.';
+      pulse(box);
+      input.focus();
+      return;
+    }
+    setApiKey(value);
+    onRetry?.();
+  };
+
+  save.addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+  row.append(input, save);
+  box.append(row, status);
+
+  // Cada vez que se renderiza el error (p. ej. al reintentar sin clave) el
+  // apartado se infla y desinfla rápido para llamar la atención.
+  requestAnimationFrame(() => pulse(box));
+  return box;
 }
 
 // ---------------------------------------------------------------------------
