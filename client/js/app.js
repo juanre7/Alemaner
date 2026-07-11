@@ -303,7 +303,7 @@ function renderHistory(items) {
 // Arranque
 // ---------------------------------------------------------------------------
 
-initSettings();
+await initSettings();
 renderPhraseTabs();
 renderPhraseGrid();
 renderHistory(listHistory());
