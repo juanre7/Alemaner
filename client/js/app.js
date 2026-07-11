@@ -9,6 +9,7 @@ import { initSettings, getApiKey } from './settings.js';
 import * as speech from './speech.js';
 
 const MAX_CHARS = 1000;
+const PHRASE_PREVIEW_LIMIT = 3;
 
 const els = {
   inputDe: document.getElementById('input-de'),
@@ -21,6 +22,7 @@ const els = {
   analyzeRev: document.getElementById('analyze-rev'),
   phraseTabs: document.getElementById('phrase-tabs'),
   phraseGrid: document.getElementById('phrase-grid'),
+  phraseActions: document.getElementById('phrase-actions'),
   historyList: document.getElementById('history-list'),
 };
 
@@ -30,6 +32,7 @@ const state = {
   model: null,         // selector del Modo Dev; el proxy solo lo respeta en dev
   lastRequest: null,
   activeCategory: 'all',
+  phrasesExpanded: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -81,6 +84,7 @@ function setBusy(busy) {
   refreshDe();
   refreshRev();
   for (const btn of els.phraseGrid.querySelectorAll('button')) btn.disabled = busy;
+  for (const btn of els.phraseActions.querySelectorAll('button')) btn.disabled = busy;
   for (const btn of els.historyList.querySelectorAll('button')) btn.disabled = busy;
 }
 
@@ -157,6 +161,7 @@ function renderPhraseTabs() {
     tab.setAttribute('aria-selected', String(state.activeCategory === category.id));
     tab.addEventListener('click', () => {
       state.activeCategory = category.id;
+      state.phrasesExpanded = false;
       renderPhraseTabs();
       renderPhraseGrid();
     });
@@ -166,9 +171,15 @@ function renderPhraseTabs() {
 
 function renderPhraseGrid() {
   els.phraseGrid.textContent = '';
-  const visible = state.activeCategory === 'all'
+  els.phraseActions.textContent = '';
+
+  const phrases = state.activeCategory === 'all'
     ? PHRASES
     : PHRASES.filter((p) => p.cat === state.activeCategory);
+  const visible = state.phrasesExpanded
+    ? phrases
+    : phrases.slice(0, PHRASE_PREVIEW_LIMIT);
+
   for (const phrase of visible) {
     const card = document.createElement('button');
     card.type = 'button';
@@ -191,6 +202,21 @@ function renderPhraseGrid() {
       runAnalysis({ text: phrase.de, direction: 'direct' });
     });
     els.phraseGrid.append(card);
+  }
+
+  if (phrases.length > PHRASE_PREVIEW_LIMIT) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'phrase-toggle';
+    toggle.disabled = state.busy;
+    toggle.textContent = state.phrasesExpanded
+      ? 'Mostrar menos'
+      : `Ver ${phrases.length - PHRASE_PREVIEW_LIMIT} más`;
+    toggle.addEventListener('click', () => {
+      state.phrasesExpanded = !state.phrasesExpanded;
+      renderPhraseGrid();
+    });
+    els.phraseActions.append(toggle);
   }
 }
 

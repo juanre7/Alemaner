@@ -4,7 +4,9 @@
 import { bus } from './telemetry.js';
 import { tryParsePartial } from './partial-json.js';
 
-const ANALYZE_URL = '/api/analyze';
+const ANALYZE_PATH = '/api/analyze';
+const API_BASE_URL = normalizeApiBase(window.ALEMANER_CONFIG?.apiBaseUrl);
+const ANALYZE_URL = `${API_BASE_URL}${ANALYZE_PATH}`;
 
 export class ApiError extends Error {
   constructor(message, status) { super(message); this.status = status; }
@@ -143,6 +145,11 @@ function finishError(message, status, t0) {
 /** Entrada de Performance API para la última llamada a /api/analyze (§4.6). */
 export function lastResourceTiming() {
   const entries = performance.getEntriesByType('resource')
-    .filter((e) => e.name.endsWith(ANALYZE_URL));
+    .filter((e) => e.name.endsWith(ANALYZE_PATH));
   return entries.length ? entries[entries.length - 1] : null;
+}
+
+function normalizeApiBase(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\/+$/, '');
 }

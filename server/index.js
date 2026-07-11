@@ -60,6 +60,11 @@ const CONFIG = {
   // Con razonamiento activo hace falta margen: los tokens de "thinking" cuentan.
   maxTokens: Number(process.env.LLM_MAX_TOKENS) || (REASONING_EFFORT ? 12_000 : 3000),
   maxChars: 1000,
+  allowedOrigins: new Set((process.env.CORS_ORIGINS
+    || 'http://localhost:8787,http://127.0.0.1:8787,https://alemaner.juanre.es,http://alemaner.juanre.es,https://juanre7.github.io')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)),
   // Con razonamiento activo las respuestas son largas (miles de tokens de
   // thinking); hace falta más margen antes de cortar.
   requestTimeoutMs: Number(process.env.LLM_TIMEOUT_MS) || (REASONING_EFFORT ? 150_000 : 90_000),
@@ -539,6 +544,17 @@ function sendJson(res, status, obj) {
   res.end(body);
 }
 
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (typeof origin !== 'string') return false;
+  if (!CONFIG.allowedOrigins.has(origin) && !CONFIG.allowedOrigins.has('*')) return false;
+  res.setHeader('access-control-allow-origin', origin);
+  res.setHeader('access-control-allow-methods', 'GET,POST,OPTIONS');
+  res.setHeader('access-control-allow-headers', 'content-type,x-user-api-key');
+  res.setHeader('vary', 'Origin');
+  return true;
+}
+
 async function serveStatic(res, baseDir, urlPath) {
   const safePath = normalize(urlPath).replace(/^(\.\.[/\\])+/, '');
   let filePath = join(baseDir, safePath);
@@ -564,8 +580,13 @@ async function serveStatic(res, baseDir, urlPath) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const ip = req.socket.remoteAddress || 'unknown';
+  const corsOk = applyCors(req, res);
 
   try {
+    if (req.method === 'OPTIONS') {
+      res.writeHead(corsOk ? 204 : 403);
+      return res.end();
+    }
     if (url.pathname === '/api/analyze' && req.method === 'POST') {
       return await handleAnalyze(req, res, ip);
     }

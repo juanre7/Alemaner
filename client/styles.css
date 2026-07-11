@@ -235,33 +235,47 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 /* ============ Frases Prediseñadas ============ */
 
-.phrase-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.phrases { padding: 16px; }
+.phrases .card-title { margin-bottom: 10px; }
+
+.phrase-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .phrase-tab {
-  background: var(--slate-100); color: var(--slate-600);
-  border: 1px solid transparent; border-radius: 999px;
-  padding: 5px 14px; font-size: 12.5px; font-weight: 600;
-  transition: background 0.15s, color 0.15s;
+  background: transparent; color: var(--slate-500);
+  border: 1px solid var(--slate-200); border-radius: 999px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.phrase-tab:hover:not(:disabled) { background: var(--slate-200); }
-.phrase-tab.active { background: var(--amber-100); color: var(--amber-700); border-color: var(--amber-200); }
+.phrase-tab:hover:not(:disabled) { background: var(--slate-50); color: var(--slate-700); }
+.phrase-tab.active { background: var(--slate-900); color: #fff; border-color: var(--slate-900); }
 
 .phrase-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .phrase-card {
+  display: block;
+  width: 100%;
   text-align: left;
-  background: var(--slate-50); border: 1px solid var(--slate-200);
-  border-radius: 10px; padding: 10px 12px;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  background: #fff; border: 1px solid var(--slate-200);
+  border-radius: 8px; padding: 8px 10px;
+  transition: border-color 0.15s, background 0.15s;
 }
 .phrase-card:hover:not(:disabled) {
   border-color: var(--amber-500); background: var(--amber-50);
-  box-shadow: var(--shadow-card-hover);
 }
-.phrase-de { display: block; font-weight: 700; font-size: 13.5px; color: var(--slate-800); }
-.phrase-es { display: block; font-size: 12.5px; color: var(--slate-500); margin-top: 2px; }
+.phrase-de { display: block; font-weight: 650; font-size: 13px; color: var(--slate-800); }
+.phrase-es { display: block; font-size: 12px; color: var(--slate-500); margin-top: 1px; }
+.phrase-actions { display: flex; justify-content: flex-start; margin-top: 8px; }
+.phrase-toggle {
+  background: transparent;
+  border: none;
+  color: var(--amber-700);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 2px;
+}
+.phrase-toggle:hover:not(:disabled) { color: var(--slate-900); }
 
 /* ============ Historial ============ */
 

@@ -48,6 +48,30 @@ client-dev/            Modo Dev (telemetría); solo se sirve con npm run dev
 
 El contrato de datos y las reglas de validación están en el §6 del PRD.
 
+## GitHub Pages
+
+El repositorio incluye un workflow en `.github/workflows/pages.yml` que publica
+solo `client/` como sitio estatico de GitHub Pages. El archivo `CNAME` se copia
+al artefacto para usar `alemaner.juanre.es`, y `.nojekyll` evita procesamiento
+extra de Jekyll.
+
+GitHub Pages no ejecuta `server/index.js`, asi que la traduccion necesita un
+proxy Node desplegado aparte. Cuando tengas ese proxy en una URL publica,
+edita `client/config.js`:
+
+```js
+window.ALEMANER_CONFIG = {
+  apiBaseUrl: 'https://api.alemaner.juanre.es',
+};
+```
+
+En el proxy, configura `CORS_ORIGINS` con el dominio de Pages para que el
+navegador pueda llamar a `/api/analyze`:
+
+```bash
+CORS_ORIGINS=https://alemaner.juanre.es,https://juanre7.github.io
+```
+
 ## Modo Dev
 
 `npm run dev` habilita el toggle **Modo Dev** en la cabecera: consola de telemetría con métricas reales (latencia total, TTFT, fases del fetch vía Performance API, logs, payloads), toggle de streaming SSE y selector de modelo. En producción ese código ni siquiera se sirve.
