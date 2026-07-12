@@ -104,7 +104,7 @@ async function runAnalysis(request) {
   const existing = inflight.get(key);
   if (existing) {
     state.displayOwner = existing;
-    renderLoading();
+    renderLoading({ originalText: text, direction });
     return;
   }
 
@@ -112,7 +112,7 @@ async function runAnalysis(request) {
   inflight.set(key, id);
   state.lastRequest = request;
   speech.stop();
-  renderLoading();
+  renderLoading({ originalText: text, direction });
 
   let lastPaint = 0;
   try {

@@ -18,6 +18,7 @@ function el(tag, className, text) {
 
 function clear() {
   speech.stop();
+  clearLoadingTimers();
   container.textContent = '';
 }
 
@@ -37,18 +38,124 @@ export function renderEmpty() {
   container.append(card);
 }
 
-export function renderLoading() {
-  clear();
-  const card = el('div', 'card result-loading');
-  card.append(el('div', 'spinner'));
-  card.append(el('p', null, 'Analizando...'));
-  container.append(card);
+// Mensajes de fase durante la carga: primero el recorrido "normal" del análisis
+// y, si la espera se alarga, mensajes honestos para que no parezca colgado.
+const LOADING_PHASES = {
+  direct: [
+    'Leyendo el alemán...',
+    'Desglosando cada palabra...',
+    'Consultando la gramática...',
+    'Anotando la pronunciación...',
+    'Buscando ejemplos reales...',
+    'Ordenando el vocabulario...',
+    'Puliendo los últimos detalles...',
+  ],
+  reverse: [
+    'Leyendo tu frase...',
+    'Pensando la mejor forma alemana...',
+    'Consultando la gramática...',
+    'Anotando la pronunciación...',
+    'Buscando ejemplos reales...',
+    'Ordenando el vocabulario...',
+    'Puliendo los últimos detalles...',
+  ],
+};
+const LOADING_PATIENT = [
+  'Esto está tardando un poco más de lo normal...',
+  'El modelo sigue trabajando, no lo hemos perdido...',
+  'Las frases con miga llevan su tiempo...',
+];
+const PATIENT_AFTER_MS = 14000; // a partir de aquí se rota el repertorio paciente
+const ROTATE_EVERY_MS = 2600;
+
+let loadingTimers = [];
+function clearLoadingTimers() {
+  for (const t of loadingTimers) clearInterval(t);
+  loadingTimers = [];
 }
 
-/** Actualiza el texto de la tarjeta de carga sin recrearla (no reinicia el spinner). */
+export function renderLoading(opts = {}) {
+  clear();
+  const card = el('div', 'card result-loading fade-up');
+
+  // Cabecera: punto latiendo + rótulo + cronómetro en vivo.
+  const head = el('div', 'loading-head');
+  const label = el('span', 'loading-label');
+  label.append(el('span', 'loading-dot'));
+  label.append(document.createTextNode('Analizando'));
+  const timer = el('span', 'loading-timer', '0,0 s');
+  head.append(label, timer);
+  card.append(head);
+
+  // La frase que se está analizando, para que la espera tenga contexto.
+  if (opts.originalText) {
+    const quoted = opts.originalText.length > 120
+      ? `${opts.originalText.slice(0, 120)}…`
+      : opts.originalText;
+    card.append(el('p', 'loading-query', `«${quoted}»`));
+  }
+
+  // Barra de progreso asintótica: arranca rápida y se frena sin llegar al
+  // final (solo el resultado real la completa; no prometemos lo que no sabemos).
+  const bar = el('div', 'loading-bar');
+  bar.append(el('div', 'loading-bar-fill'));
+  card.append(bar);
+
+  // Mensaje de fase rotatorio.
+  const phases = LOADING_PHASES[opts.direction] || LOADING_PHASES.direct;
+  const msg = el('p', 'loading-msg', phases[0]);
+  msg.setAttribute('role', 'status');
+  card.append(msg);
+
+  // Esqueleto del resultado que viene: traducción grande + dos secciones.
+  const skeleton = el('div', 'skeleton');
+  skeleton.setAttribute('aria-hidden', 'true');
+  skeleton.append(el('div', 'skel-line skel-title'));
+  skeleton.append(el('div', 'skel-line skel-w60'));
+  const section1 = el('div', 'skel-section');
+  section1.append(el('div', 'skel-line skel-head'));
+  section1.append(el('div', 'skel-line'));
+  section1.append(el('div', 'skel-line skel-w80'));
+  const section2 = el('div', 'skel-section');
+  section2.append(el('div', 'skel-line skel-head'));
+  const chips = el('div', 'skel-chips');
+  for (let i = 0; i < 3; i++) chips.append(el('div', 'skel-chip'));
+  section2.append(chips);
+  skeleton.append(section1, section2);
+  card.append(skeleton);
+
+  container.append(card);
+
+  const t0 = performance.now();
+  loadingTimers.push(setInterval(() => {
+    const s = (performance.now() - t0) / 1000;
+    timer.textContent = `${s.toFixed(1).replace('.', ',')} s`;
+  }, 100));
+
+  let step = 0;
+  loadingTimers.push(setInterval(() => {
+    if (msg.dataset.pinned) return; // el progreso real (razonamiento) manda
+    step += 1;
+    const pool = performance.now() - t0 > PATIENT_AFTER_MS ? LOADING_PATIENT : phases;
+    msg.classList.add('msg-swap');
+    setTimeout(() => {
+      if (!msg.isConnected || msg.dataset.pinned) return;
+      msg.textContent = pool[step % pool.length];
+      msg.classList.remove('msg-swap');
+    }, 180);
+  }, ROTATE_EVERY_MS));
+}
+
+/** Actualiza el mensaje de la tarjeta de carga sin recrearla. El texto queda
+ *  fijado: el progreso real (p. ej. tokens de razonamiento) sustituye a la
+ *  rotación de mensajes decorativos. */
 export function setLoadingNote(text) {
-  const msg = container.querySelector('.result-loading p');
-  if (msg) msg.textContent = text;
+  const msg = container.querySelector('.result-loading .loading-msg');
+  if (msg) {
+    msg.dataset.pinned = '1';
+    msg.classList.remove('msg-swap');
+    msg.textContent = text;
+  }
 }
 
 export function renderError(message, onRetry, opts = {}) {
