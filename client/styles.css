@@ -159,18 +159,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .layout { grid-template-columns: 1fr; }
 }
 
-/* Aviso de modo demo (GitHub Pages sin clave propia) */
-.demo-note {
-  margin: 0;
-  padding: 10px 14px;
-  background: var(--amber-50);
-  border: 1px solid var(--amber-200);
-  border-radius: var(--radius);
-  color: var(--amber-700);
-  font-size: 0.85rem;
-  line-height: 1.45;
-}
-
 .card {
   background: #fff;
   border: 1px solid var(--card-border);

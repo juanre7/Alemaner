@@ -11,14 +11,6 @@ const DIRECT_MODE = shouldUseDirectMode();
 const DIRECT_PROVIDER = (window.ALEMANER_CONFIG?.directProvider || 'openrouter').toLowerCase();
 const DIRECT_MODEL = window.ALEMANER_CONFIG?.directModel || 'deepseek/deepseek-v4-flash';
 const DIRECT_MAX_TOKENS = Number(window.ALEMANER_CONFIG?.directMaxTokens) || 4000;
-// Modo demo (§5.2): sin clave propia, se usa el tier anonimo de Pollinations.ai
-// (gratuito, sin registro, ~1 peticion/15s). La clave BYOK sigue teniendo prioridad.
-const DEMO_MODEL = window.ALEMANER_CONFIG?.demoModel || 'openai';
-
-/** True cuando el cliente habla directamente con el proveedor (GitHub Pages). */
-export function isDirectMode() {
-  return DIRECT_MODE;
-}
 
 const SYSTEM_PROMPT = `Eres un traductor y analizador gramatical de aleman para estudiantes hispanohablantes.
 
@@ -203,28 +195,27 @@ export async function analyze({ text, direction, model, stream, apiKey, onPartia
 
 async function analyzeDirect({ text, direction, model, apiKey }) {
   const t0 = performance.now();
-  const demo = !apiKey;
-  const selectedModel = demo ? DEMO_MODEL : (model || DIRECT_MODEL);
-  const provider = demo ? 'pollinations-demo' : (inferProvider(apiKey) || DIRECT_PROVIDER);
+  const selectedModel = model || DIRECT_MODEL;
+  const provider = inferProvider(apiKey) || DIRECT_PROVIDER;
 
   bus.emit('start', { direction, stream: false, model: selectedModel, requestBody: { text, direction }, t0 });
   bus.emit('log', { kind: 'client', msg: `Consulta directa (${provider}, ${selectedModel})` });
   bus.emit('phase', { name: 'Peticion enviada', t: 0 });
 
+  if (!apiKey) {
+    const err = finishError('Para usar GitHub Pages sin servidor, guarda tu clave API en Ajustes.', 401, t0);
+    err.code = 'NO_API_KEY';
+    throw err;
+  }
+
   let rawText;
   try {
-    rawText = demo
-      ? await callPollinationsDirect({ model: selectedModel, text, direction })
-      : provider === 'anthropic'
-        ? await callAnthropicDirect({ apiKey, model: selectedModel, text, direction })
-        : await callOpenRouterDirect({ apiKey, model: selectedModel, text, direction });
+    rawText = provider === 'anthropic'
+      ? await callAnthropicDirect({ apiKey, model: selectedModel, text, direction })
+      : await callOpenRouterDirect({ apiKey, model: selectedModel, text, direction });
   } catch (err) {
-    const wrapped = err instanceof ApiError
-      ? finishError(err.message, err.status, t0)
-      : finishError('No se pudo contactar con el proveedor. Revisa la clave, creditos y permisos CORS.', 0, t0);
-    // En demo, cualquier fallo invita a guardar la clave propia (input inline).
-    if (demo) wrapped.code = 'NO_API_KEY';
-    throw wrapped;
+    if (err instanceof ApiError) throw finishError(err.message, err.status, t0);
+    throw finishError('No se pudo contactar con el proveedor. Revisa la clave, creditos y permisos CORS.', 0, t0);
   }
 
   const parsed = extractJson(rawText);
@@ -263,29 +254,6 @@ async function callOpenRouterDirect({ apiKey, model, text, direction }) {
       ],
     }),
   });
-  if (!response.ok) throw new ApiError(await providerErrorMessage(response), response.status);
-  const json = await response.json();
-  return json?.choices?.[0]?.message?.content || '';
-}
-
-async function callPollinationsDirect({ model, text, direction }) {
-  // Tier anonimo de Pollinations.ai: endpoint OpenAI-compatible, sin clave.
-  const response = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      max_tokens: DIRECT_MAX_TOKENS,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: `${SYSTEM_PROMPT}\n\n${directionHint(direction)}` },
-        { role: 'user', content: text },
-      ],
-    }),
-  });
-  if (response.status === 429) {
-    throw new ApiError('El modo demo esta saturado (limite del servicio gratuito, ~1 consulta cada 15s). Espera unos segundos o guarda tu propia clave API en Ajustes.', 429);
-  }
   if (!response.ok) throw new ApiError(await providerErrorMessage(response), response.status);
   const json = await response.json();
   return json?.choices?.[0]?.message?.content || '';

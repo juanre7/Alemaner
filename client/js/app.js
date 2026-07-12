@@ -1,6 +1,6 @@
 // Alemán Simultáneo — orquestador de la Estación de Trabajo.
 
-import { analyze, lastResourceTiming, isDirectMode } from './api.js';
+import { analyze, lastResourceTiming } from './api.js';
 import { bus } from './telemetry.js';
 import { renderEmpty, renderLoading, renderError, renderResult, setLoadingNote } from './render.js';
 import { listHistory, addToHistory, removeFromHistory } from './history.js';
@@ -326,12 +326,6 @@ function renderHistory(items) {
 // ---------------------------------------------------------------------------
 
 await initSettings();
-
-// Aviso de modo demo: en modo directo sin clave propia se usa Pollinations.ai.
-const demoNote = document.getElementById('demo-note');
-const refreshDemoNote = () => { demoNote.hidden = !(isDirectMode() && !getApiKey()); };
-document.addEventListener('apikeychange', refreshDemoNote);
-refreshDemoNote();
 
 renderPhraseTabs();
 renderPhraseGrid();
