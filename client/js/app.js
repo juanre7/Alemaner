@@ -78,8 +78,10 @@ function setupPanel(input, counter, clearBtn, analyzeBtn, direction) {
   });
 
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !analyzeBtn.disabled) {
-      runAnalysis({ text: input.value, direction });
+    // Enter envía; Shift+Enter inserta salto de línea (§4.2).
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!analyzeBtn.disabled) runAnalysis({ text: input.value, direction });
     }
   });
 
