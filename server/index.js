@@ -58,7 +58,7 @@ const CONFIG = {
   // Tokens de salida esperados por consulta (análisis + razonamiento), para el score.
   expectedTokens: Number(process.env.LLM_EXPECTED_TOKENS) || 2000,
   // Con razonamiento activo hace falta margen: los tokens de "thinking" cuentan.
-  maxTokens: Number(process.env.LLM_MAX_TOKENS) || (REASONING_EFFORT ? 12_000 : 3000),
+  maxTokens: Number(process.env.LLM_MAX_TOKENS) || (REASONING_EFFORT ? 12_000 : 4000),
   maxChars: 1000,
   allowedOrigins: new Set((process.env.CORS_ORIGINS
     || 'http://localhost:8787,http://127.0.0.1:8787,https://alemaner.juanre.es,http://alemaner.juanre.es,https://juanre7.github.io')
@@ -101,20 +101,50 @@ function rateLimited(ip) {
 // Contrato de datos: validación del schema (§6)
 // ---------------------------------------------------------------------------
 const LANGS = new Set(['de', 'es', 'en', 'fr']);
+const TRANSLATION_LANGS = new Set(['es', 'en', 'fr']);
 
 function validateAnalysis(raw) {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { ok: false, error: 'La respuesta no es un objeto JSON' };
   }
   const out = {};
+
+  // Palabra inexistente: respuesta corta sin análisis (el modelo se rinde con
+  // una explicación). Aquí "translation" vacío es válido.
+  if (raw.notFound && typeof raw.notFound === 'object'
+    && typeof raw.notFound.note === 'string' && raw.notFound.note.trim()) {
+    out.notFound = { note: raw.notFound.note };
+    out.detectedLang = LANGS.has(raw.detectedLang) ? raw.detectedLang : 'de';
+    return { ok: true, value: out };
+  }
+  out.notFound = null;
+
   if (typeof raw.translation !== 'string' || !raw.translation.trim()) {
     return { ok: false, error: 'Falta el campo "translation"' };
   }
   out.translation = raw.translation;
   out.detectedLang = LANGS.has(raw.detectedLang) ? raw.detectedLang : null;
   if (!out.detectedLang) return { ok: false, error: 'Campo "detectedLang" inválido' };
+  // Corrección ortográfica sugerida por el modelo (null si la entrada era válida).
+  out.correction = (raw.correction && typeof raw.correction === 'object'
+    && typeof raw.correction.corrected === 'string' && raw.correction.corrected.trim())
+    ? {
+      original: typeof raw.correction.original === 'string' ? raw.correction.original : '',
+      corrected: raw.correction.corrected,
+      note: typeof raw.correction.note === 'string' ? raw.correction.note : '',
+    }
+    : null;
+
   if (typeof raw.pronunciation !== 'string') return { ok: false, error: 'Falta el campo "pronunciation"' };
   out.pronunciation = raw.pronunciation;
+
+  // Traducción simultánea ES/EN/FR con matices (solo entrada alemana).
+  // Tolerante: si el modelo lo omite, se degrada a [] en vez de reintentar.
+  out.translations = Array.isArray(raw.translations)
+    ? raw.translations
+      .filter((t) => t && TRANSLATION_LANGS.has(t.lang) && typeof t.text === 'string' && t.text.trim())
+      .map((t) => ({ lang: t.lang, text: t.text, note: typeof t.note === 'string' ? t.note : '' }))
+    : [];
 
   if (!Array.isArray(raw.grammarNotes)) return { ok: false, error: 'Falta el campo "grammarNotes"' };
   out.grammarNotes = raw.grammarNotes.filter((n) => typeof n === 'string');
@@ -123,6 +153,13 @@ function validateAnalysis(raw) {
   out.vocabulary = raw.vocabulary
     .filter((v) => v && typeof v.german === 'string' && typeof v.meaning === 'string')
     .map((v) => ({ german: v.german, meaning: v.meaning, category: typeof v.category === 'string' ? v.category : '' }));
+
+  // Etimología: opcional por diseño (palabras sueltas o términos difíciles).
+  out.etymology = Array.isArray(raw.etymology)
+    ? raw.etymology
+      .filter((e) => e && typeof e.german === 'string' && typeof e.origin === 'string' && e.origin.trim())
+      .map((e) => ({ german: e.german, origin: e.origin }))
+    : [];
 
   if (!Array.isArray(raw.alternatives)) return { ok: false, error: 'Falta el campo "alternatives"' };
   out.alternatives = raw.alternatives.filter((a) => typeof a === 'string' && a.trim());
@@ -284,6 +321,18 @@ async function openRouterProviderOrder(model, signal) {
   return order;
 }
 
+// ---------------------------------------------------------------------------
+// Enrutador heurístico de razonamiento
+// ---------------------------------------------------------------------------
+// Una consulta de una sola palabra (sin espacios internos tras recortar) no
+// tiene sintaxis que analizar: el razonamiento no aporta y multiplica la
+// latencia. Se envía sin modo razonamiento; las frases mantienen el esfuerzo
+// configurado en LLM_REASONING_EFFORT.
+function reasoningEffortFor(userText) {
+  if (!CONFIG.reasoningEffort) return '';
+  return /\s/.test(userText.trim()) ? CONFIG.reasoningEffort : '';
+}
+
 async function callAnthropic({ apiKey, model, userText, direction, onChunk, signal }) {
   const response = await fetch(CONFIG.apiUrl, {
     method: 'POST',
@@ -320,7 +369,7 @@ async function callAnthropic({ apiKey, model, userText, direction, onChunk, sign
   return fullText;
 }
 
-async function callOpenRouter({ apiKey, model, userText, direction, onChunk, signal }) {
+async function callOpenRouter({ apiKey, model, userText, direction, onChunk, onThinking, signal }) {
   const body = {
     model,
     stream: true,
@@ -332,7 +381,10 @@ async function callOpenRouter({ apiKey, model, userText, direction, onChunk, sig
     // Modo JSON del proveedor (§6) — deepseek-v4-flash lo soporta.
     response_format: { type: 'json_object' },
   };
-  if (CONFIG.reasoningEffort) body.reasoning = { effort: CONFIG.reasoningEffort };
+  // Los modelos híbridos (DeepSeek) razonan por defecto: para desactivar el
+  // razonamiento no basta con omitir el parámetro, hay que pedirlo explícito.
+  const reasoningEffort = reasoningEffortFor(userText);
+  body.reasoning = reasoningEffort ? { effort: reasoningEffort } : { enabled: false };
 
   // Enrutado entre proveedores, siempre con fallback si el elegido falla.
   if (CONFIG.providerSort === 'auto') {
@@ -362,6 +414,7 @@ async function callOpenRouter({ apiKey, model, userText, direction, onChunk, sig
 
   let tFirst = null;
   let generatedChars = 0;
+  let reasoningChars = 0;
   let upstreamProvider = null;
   let fullText = '';
 
@@ -393,6 +446,8 @@ async function callOpenRouter({ apiKey, model, userText, direction, onChunk, sig
       if (typeof delta.reasoning === 'string' && delta.reasoning) {
         if (tFirst === null) tFirst = Date.now();
         generatedChars += delta.reasoning.length;
+        reasoningChars += delta.reasoning.length;
+        onThinking?.(reasoningChars);
       }
       if (typeof delta.content === 'string' && delta.content) {
         if (tFirst === null) tFirst = Date.now();
@@ -451,6 +506,7 @@ async function handleAnalyze(req, res, ip) {
     let attempt = 0;
     let analysis = null;
     let lastError = 'Respuesta fuera de formato';
+    let lastThinkingPush = 0;
     // Validación con un reintento si el JSON no cumple el schema (§6).
     while (attempt < 2 && !analysis) {
       attempt += 1;
@@ -460,6 +516,14 @@ async function handleAnalyze(req, res, ip) {
         signal: controller.signal,
         // Solo retransmitimos chunks en el primer intento; el reintento va buffered.
         onChunk: sse && attempt === 1 ? (t) => sse.send('chunk', { text: t }) : null,
+        // Progreso del razonamiento: sin esto el cliente no ve nada hasta que
+        // el modelo termina de pensar y empieza a emitir el JSON.
+        onThinking: sse && attempt === 1 ? (chars) => {
+          const now = Date.now();
+          if (now - lastThinkingPush < 250) return;
+          lastThinkingPush = now;
+          sse.send('thinking', { chars });
+        } : null,
       });
       const parsed = extractJson(fullText);
       const result = validateAnalysis(parsed);

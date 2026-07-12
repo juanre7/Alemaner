@@ -7,6 +7,8 @@ import { getApiKey, setApiKey } from './settings.js';
 
 const container = document.getElementById('results');
 
+const LANG_LABELS = { es: '🇪🇸 Español', en: '🇬🇧 Inglés', fr: '🇫🇷 Francés' };
+
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -41,6 +43,12 @@ export function renderLoading() {
   card.append(el('div', 'spinner'));
   card.append(el('p', null, 'Analizando...'));
   container.append(card);
+}
+
+/** Actualiza el texto de la tarjeta de carga sin recrearla (no reinicia el spinner). */
+export function setLoadingNote(text) {
+  const msg = container.querySelector('.result-loading p');
+  if (msg) msg.textContent = text;
 }
 
 export function renderError(message, onRetry, opts = {}) {
@@ -125,11 +133,23 @@ function buildInlineKey(onRetry) {
  *  - originalText: texto de entrada del usuario
  *  - elapsed: ms de la consulta (solo en resultado final)
  *  - partial: true durante el streaming
- *  - busy(): la app está en una consulta en curso (deshabilita chips)
  *  - onAlternative(text): clic en un chip de alternativa
  */
-export function renderResult({ analysis, originalText, elapsed, partial, busy, onAlternative }) {
+export function renderResult({ analysis, originalText, elapsed, partial, onAlternative }) {
   clear();
+
+  // Palabra inexistente: ficha corta con la explicación, sin análisis.
+  if (analysis.notFound?.note) {
+    const card = el('div', `card result-notfound ${partial ? '' : 'fade-up'}`);
+    card.append(el('span', 'notfound-icon', '❓'));
+    card.append(el('h2', null, 'Palabra no reconocida'));
+    if (originalText) card.append(el('p', 'original-text', originalText));
+    card.append(el('p', 'notfound-note', analysis.notFound.note));
+    container.append(card);
+    if (!partial) bus.emit('phase', { name: 'Render', t: null });
+    return;
+  }
+
   const card = el('div', `card result ${partial ? '' : 'fade-up'}`);
 
   // Encabezado
@@ -144,6 +164,22 @@ export function renderResult({ analysis, originalText, elapsed, partial, busy, o
   }
   card.append(head);
 
+  // Aviso de corrección ortográfica: el análisis se refiere a la palabra corregida.
+  const fix = analysis.correction;
+  if (fix && fix.corrected) {
+    const box = el('div', 'correction-box');
+    box.append(el('span', 'correction-icon', '✏️'));
+    const body = el('div');
+    const title = el('p', 'correction-title');
+    title.append(document.createTextNode(`«${fix.original || originalText}» no parece existir. Analizando `));
+    title.append(el('strong', null, fix.corrected));
+    title.append(document.createTextNode(':'));
+    body.append(title);
+    if (fix.note) body.append(el('p', 'correction-note', fix.note));
+    box.append(body);
+    card.append(box);
+  }
+
   // Traducción + audio
   if (analysis.translation) {
     if (originalText) card.append(el('p', 'original-text', originalText));
@@ -151,7 +187,10 @@ export function renderResult({ analysis, originalText, elapsed, partial, busy, o
     row.append(el('p', 'translation-main', analysis.translation));
 
     // La frase ALEMANA es la entrada (dirección directa) o la traducción (inversa).
-    const germanText = analysis.detectedLang === 'de' ? originalText : analysis.translation;
+    // Si hubo corrección ortográfica, se pronuncia la forma corregida.
+    const germanText = analysis.detectedLang === 'de'
+      ? (analysis.correction?.corrected || originalText)
+      : analysis.translation;
     if (speech.isSupported() && germanText) {
       const audioBtn = el('button', 'btn-audio', '📢');
       audioBtn.type = 'button';
@@ -168,6 +207,23 @@ export function renderResult({ analysis, originalText, elapsed, partial, busy, o
       row.append(audioBtn);
     }
     card.append(row);
+  }
+
+  // Traducción simultánea ES/EN/FR con matices (solo entrada alemana)
+  const translations = (analysis.translations || []).filter((t) => t && t.text && LANG_LABELS[t.lang]);
+  if (translations.length) {
+    const section = makeSection(card, '🌍', 'Traducción simultánea');
+    const list = el('div', 'multi-trans');
+    for (const t of translations) {
+      const item = el('div', 'mt-item');
+      const head = el('div', 'mt-head');
+      head.append(el('span', 'mt-lang', LANG_LABELS[t.lang]));
+      head.append(el('span', 'mt-text', t.text));
+      item.append(head);
+      if (t.note) item.append(el('p', 'mt-note', t.note));
+      list.append(item);
+    }
+    section.append(list);
   }
 
   // Pronunciación
@@ -212,6 +268,20 @@ export function renderResult({ analysis, originalText, elapsed, partial, busy, o
     section.append(wrap);
   }
 
+  // Etimología (siempre en palabras sueltas; opcional en frases)
+  const etymology = (analysis.etymology || []).filter((e) => e && e.german && e.origin);
+  if (etymology.length) {
+    const section = makeSection(card, '🌱', 'Etimología');
+    const list = el('div', 'etym-list');
+    for (const entry of etymology) {
+      const item = el('div', 'etym-item');
+      item.append(el('span', 'etym-word', entry.german));
+      item.append(el('p', 'etym-origin', entry.origin));
+      list.append(item);
+    }
+    section.append(list);
+  }
+
   // Alternativas (chips clicables → relanzan el análisis)
   const alternatives = (analysis.alternatives || []).filter((a) => typeof a === 'string' && a.trim());
   if (alternatives.length) {
@@ -220,10 +290,7 @@ export function renderResult({ analysis, originalText, elapsed, partial, busy, o
     for (const alt of alternatives) {
       const chip = el('button', 'alt-chip', alt);
       chip.type = 'button';
-      chip.addEventListener('click', () => {
-        if (busy && busy()) return;
-        onAlternative?.(alt);
-      });
+      chip.addEventListener('click', () => onAlternative?.(alt));
       chips.append(chip);
     }
     section.append(chips);

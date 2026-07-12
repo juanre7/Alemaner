@@ -51,6 +51,7 @@ export async function loadApiKey() {
 async function persist(value) {
   const trimmed = (value || '').trim();
   cachedKey = trimmed;
+  document.dispatchEvent(new CustomEvent('apikeychange'));
   try {
     if (!trimmed) {
       localStorage.removeItem(ENC_KEY);

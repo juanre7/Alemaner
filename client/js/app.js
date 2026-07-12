@@ -1,8 +1,8 @@
 // Alemán Simultáneo — orquestador de la Estación de Trabajo.
 
-import { analyze, lastResourceTiming } from './api.js';
+import { analyze, lastResourceTiming, isDirectMode } from './api.js';
 import { bus } from './telemetry.js';
-import { renderEmpty, renderLoading, renderError, renderResult } from './render.js';
+import { renderEmpty, renderLoading, renderError, renderResult, setLoadingNote } from './render.js';
 import { listHistory, addToHistory, removeFromHistory } from './history.js';
 import { CATEGORIES, PHRASES } from './phrases.js';
 import { initSettings, getApiKey } from './settings.js';
@@ -27,13 +27,24 @@ const els = {
 };
 
 const state = {
-  busy: false,
+  displayOwner: 0,     // id de la consulta que posee el panel de resultados
   streamMode: false,   // toggle del Modo Dev (§5.3); buffer por defecto
   model: null,         // selector del Modo Dev; el proxy solo lo respeta en dev
   lastRequest: null,
   activeCategory: 'all',
   phrasesExpanded: false,
 };
+
+// Las consultas NO bloquean la interfaz: cada una recibe un id creciente y
+// solo la más reciente (la "dueña" del panel) pinta resultados. Las anteriores
+// siguen en segundo plano hasta terminar y guardarse en el historial (§4.4).
+let querySeq = 0;
+const inflight = new Map(); // "direction|text" → id, para re-adoptar duplicados
+
+function claimDisplay() {
+  state.displayOwner = ++querySeq;
+  return state.displayOwner;
+}
 
 // ---------------------------------------------------------------------------
 // Estación de Traducción Dual
@@ -46,16 +57,18 @@ function setupPanel(input, counter, clearBtn, analyzeBtn, direction) {
     counter.classList.toggle('warn', len >= MAX_CHARS * 0.9 && len < MAX_CHARS);
     counter.classList.toggle('limit', len >= MAX_CHARS);
     clearBtn.hidden = len === 0;
-    analyzeBtn.disabled = state.busy || !input.value.trim();
+    analyzeBtn.disabled = !input.value.trim();
   };
 
   input.addEventListener('input', refresh);
 
   clearBtn.addEventListener('click', () => {
     // Vacía la caja, limpia resultados y errores, detiene la voz (§4.2).
+    // Toma el panel: una consulta pendiente ya no lo pisará (solo irá al historial).
     input.value = '';
     refresh();
     speech.stop();
+    claimDisplay();
     renderEmpty();
     input.focus();
   });
@@ -77,27 +90,27 @@ function setupPanel(input, counter, clearBtn, analyzeBtn, direction) {
 const refreshDe = setupPanel(els.inputDe, els.counterDe, els.clearDe, els.analyzeDe, 'direct');
 const refreshRev = setupPanel(els.inputRev, els.counterRev, els.clearRev, els.analyzeRev, 'reverse');
 
-function setBusy(busy) {
-  state.busy = busy;
-  els.inputDe.disabled = busy;
-  els.inputRev.disabled = busy;
-  refreshDe();
-  refreshRev();
-  for (const btn of els.phraseGrid.querySelectorAll('button')) btn.disabled = busy;
-  for (const btn of els.phraseActions.querySelectorAll('button')) btn.disabled = busy;
-  for (const btn of els.historyList.querySelectorAll('button')) btn.disabled = busy;
-}
-
 // ---------------------------------------------------------------------------
 // Consulta al proxy
 // ---------------------------------------------------------------------------
 
 async function runAnalysis(request) {
   const { text, direction } = request;
-  if (state.busy || !text.trim() || text.length > MAX_CHARS) return;
+  if (!text.trim() || text.length > MAX_CHARS) return;
 
+  // Doble clic o consulta idéntica aún en curso: se re-adopta en pantalla en
+  // vez de lanzar una petición duplicada al proveedor.
+  const key = `${direction}|${text}`;
+  const existing = inflight.get(key);
+  if (existing) {
+    state.displayOwner = existing;
+    renderLoading();
+    return;
+  }
+
+  const id = claimDisplay();
+  inflight.set(key, id);
   state.lastRequest = request;
-  setBusy(true);
   speech.stop();
   renderLoading();
 
@@ -109,32 +122,41 @@ async function runAnalysis(request) {
       stream: state.streamMode,
       model: state.model,
       apiKey: getApiKey(),
+      onThinking(chars) {
+        // Fase de razonamiento: aún no hay JSON que pintar, pero sí progreso.
+        if (state.displayOwner !== id) return;
+        setLoadingNote(`Razonando... (~${Math.round(chars / 4)} tokens)`);
+      },
       onPartial(partial) {
         // Pintado progresivo con un pequeño throttle para hardware modesto.
+        if (state.displayOwner !== id) return;
         const now = performance.now();
         if (now - lastPaint < 150) return;
         lastPaint = now;
-        renderResult({
-          analysis: partial, originalText: text, partial: true,
-          busy: () => state.busy, onAlternative,
-        });
+        renderResult({ analysis: partial, originalText: text, partial: true, onAlternative });
       },
     });
 
-    renderResult({
-      analysis, originalText: text, elapsed,
-      busy: () => state.busy, onAlternative,
-    });
+    // Al historial SIEMPRE, aunque otra consulta haya tomado el panel (§4.4).
     renderHistory(addToHistory({
       text, direction, detectedLang: analysis.detectedLang, analysis, elapsed,
     }));
-    bus.emit('complete', { elapsed, ttft, direction, resource: lastResourceTiming() });
+
+    if (state.displayOwner === id) {
+      renderResult({ analysis, originalText: text, elapsed, onAlternative });
+      bus.emit('complete', { elapsed, ttft, direction, resource: lastResourceTiming() });
+    } else {
+      bus.emit('log', { kind: 'client', msg: `Consulta en segundo plano guardada en el historial: "${text.slice(0, 40)}"` });
+    }
   } catch (err) {
-    // El texto de entrada se conserva intacto (§7); solo cambia el panel derecho.
-    renderError(err.message || 'Error inesperado', () => runAnalysis(state.lastRequest),
-      { needsApiKey: err.code === 'NO_API_KEY' });
+    // El texto de entrada se conserva intacto (§7); solo cambia el panel
+    // derecho, y solo si esta consulta sigue siendo la activa.
+    if (state.displayOwner === id) {
+      renderError(err.message || 'Error inesperado', () => runAnalysis(state.lastRequest),
+        { needsApiKey: err.code === 'NO_API_KEY' });
+    }
   } finally {
-    setBusy(false);
+    inflight.delete(key);
   }
 }
 
@@ -185,7 +207,6 @@ function renderPhraseGrid() {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'phrase-card';
-    card.disabled = state.busy;
     const de = document.createElement('span');
     de.className = 'phrase-de';
     de.textContent = phrase.de;
@@ -195,7 +216,6 @@ function renderPhraseGrid() {
     card.append(de, es);
     card.addEventListener('click', () => {
       // Autocompleta la caja alemana, vacía la inversa y lanza el análisis (§4.3).
-      if (state.busy) return;
       els.inputDe.value = phrase.de;
       els.inputRev.value = '';
       refreshDe();
@@ -209,7 +229,6 @@ function renderPhraseGrid() {
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'phrase-toggle';
-    toggle.disabled = state.busy;
     toggle.textContent = state.phrasesExpanded
       ? 'Mostrar menos'
       : `Ver ${phrases.length - PHRASE_PREVIEW_LIMIT} más`;
@@ -279,8 +298,9 @@ function renderHistory(items) {
     });
     row.addEventListener('click', () => {
       // Restaura entrada y resultado guardado SIN llamada al servidor (§4.4).
-      if (state.busy) return;
+      // Toma el panel: una consulta pendiente ya no lo pisará al terminar.
       speech.stop();
+      claimDisplay();
       const input = isDirect ? els.inputDe : els.inputRev;
       input.value = item.text.slice(0, MAX_CHARS);
       refreshDe();
@@ -288,7 +308,7 @@ function renderHistory(items) {
       if (item.analysis) {
         renderResult({
           analysis: item.analysis, originalText: item.text, elapsed: item.elapsed,
-          busy: () => state.busy, onAlternative,
+          onAlternative,
         });
       } else {
         renderEmpty();
@@ -304,6 +324,13 @@ function renderHistory(items) {
 // ---------------------------------------------------------------------------
 
 await initSettings();
+
+// Aviso de modo demo: en modo directo sin clave propia se usa Pollinations.ai.
+const demoNote = document.getElementById('demo-note');
+const refreshDemoNote = () => { demoNote.hidden = !(isDirectMode() && !getApiKey()); };
+document.addEventListener('apikeychange', refreshDemoNote);
+refreshDemoNote();
+
 renderPhraseTabs();
 renderPhraseGrid();
 renderHistory(listHistory());
