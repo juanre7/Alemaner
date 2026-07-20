@@ -24,9 +24,9 @@
       <button id="dev-toggle" class="btn-dev" type="button" hidden aria-pressed="false">
         <span class="dev-dot" aria-hidden="true"></span> Modo Dev
       </button>
-      <button id="settings-btn" class="btn-ghost" type="button" aria-haspopup="dialog">
+      <button id="settings-btn" class="btn-ghost btn-ghost-icon" type="button" aria-haspopup="dialog"
+              aria-label="Ajustes" title="Ajustes">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-        Ajustes
       </button>
     </div>
   </header>
@@ -66,7 +66,11 @@
           <div class="station-panel">
             <div class="panel-label"><span class="flag" aria-hidden="true">🇩🇪</span> Alemán</div>
             <div class="textarea-wrap">
+              <!-- lang="de" pide al teclado del sistema (Gboard en Android, teclado
+                   de iOS) que cambie a alemán al enfocar esta caja. -->
               <textarea id="input-de" maxlength="1000" rows="4"
+                lang="de" inputmode="text"
+                autocapitalize="sentences" autocorrect="on" spellcheck="true"
                 placeholder="Escribe palabras, frases o textos en alemán..."></textarea>
               <button id="clear-de" class="btn-clear" type="button" hidden aria-label="Limpiar caja de alemán">✕</button>
             </div>
@@ -81,7 +85,7 @@
           <div class="station-panel">
             <div class="panel-label">Español / EN / FR</div>
             <div class="textarea-wrap">
-              <textarea id="input-rev" maxlength="1000" rows="4"
+              <textarea id="input-rev" maxlength="1000" rows="4" lang="es"
                 placeholder="Escribe en español, inglés o francés... para traducirlo al alemán con notas de aprendizaje..."></textarea>
               <button id="clear-rev" class="btn-clear" type="button" hidden aria-label="Limpiar caja de español, inglés o francés">✕</button>
             </div>
@@ -106,6 +110,7 @@
       <div class="card history">
         <h2 class="card-title">Historial de consultas</h2>
         <div id="history-list" class="history-list"></div>
+        <div id="history-actions" class="phrase-actions"></div>
       </div>
 
     </section>

@@ -10,6 +10,10 @@ import * as speech from './speech.js';
 
 const MAX_CHARS = 1000;
 const PHRASE_PREVIEW_LIMIT = 3;
+const HISTORY_PREVIEW_LIMIT = 3;
+// Por debajo de este ancho la maqueta es de una sola columna: los resultados
+// quedan fuera de pantalla y hay que desplazarse hasta ellos (§4.1).
+const MOBILE_BREAKPOINT = 960;
 
 const els = {
   inputDe: document.getElementById('input-de'),
@@ -24,6 +28,8 @@ const els = {
   phraseGrid: document.getElementById('phrase-grid'),
   phraseActions: document.getElementById('phrase-actions'),
   historyList: document.getElementById('history-list'),
+  historyActions: document.getElementById('history-actions'),
+  results: document.getElementById('results'),
 };
 
 const state = {
@@ -33,7 +39,16 @@ const state = {
   lastRequest: null,
   activeCategory: 'all',
   phrasesExpanded: false,
+  historyExpanded: false,
 };
+
+// En móvil (una columna) el panel de resultados queda debajo del formulario:
+// al lanzar un análisis desplazamos la vista hasta él y cerramos el teclado.
+function scrollToResults() {
+  if (window.innerWidth > MOBILE_BREAKPOINT) return;
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  els.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // Las consultas NO bloquean la interfaz: cada una recibe un id creciente y
 // solo la más reciente (la "dueña" del panel) pinta resultados. Las anteriores
@@ -107,6 +122,7 @@ async function runAnalysis(request) {
   if (existing) {
     state.displayOwner = existing;
     renderLoading({ originalText: text, direction });
+    scrollToResults();
     return;
   }
 
@@ -115,6 +131,7 @@ async function runAnalysis(request) {
   state.lastRequest = request;
   speech.stop();
   renderLoading({ originalText: text, direction });
+  scrollToResults();
 
   let lastPaint = 0;
   try {
@@ -248,6 +265,7 @@ function renderPhraseGrid() {
 
 function renderHistory(items) {
   els.historyList.textContent = '';
+  els.historyActions.textContent = '';
 
   if (!items.length) {
     const empty = document.createElement('div');
@@ -263,7 +281,11 @@ function renderHistory(items) {
     return;
   }
 
-  for (const item of items) {
+  // Igual que las frases prediseñadas: se muestran unas pocas y el resto
+  // queda plegado tras "Ver N más".
+  const visible = state.historyExpanded ? items : items.slice(0, HISTORY_PREVIEW_LIMIT);
+
+  for (const item of visible) {
     // Div con semántica de botón: un <button> no puede contener la papelera.
     const row = document.createElement('div');
     row.className = 'history-row';
@@ -315,9 +337,24 @@ function renderHistory(items) {
       } else {
         renderEmpty();
       }
+      scrollToResults();
       bus.emit('log', { kind: 'client', msg: 'Resultado restaurado desde el historial (sin coste)' });
     });
     els.historyList.append(row);
+  }
+
+  if (items.length > HISTORY_PREVIEW_LIMIT) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'phrase-toggle';
+    toggle.textContent = state.historyExpanded
+      ? 'Mostrar menos'
+      : `Ver ${items.length - HISTORY_PREVIEW_LIMIT} más`;
+    toggle.addEventListener('click', () => {
+      state.historyExpanded = !state.historyExpanded;
+      renderHistory(items);
+    });
+    els.historyActions.append(toggle);
   }
 }
 
