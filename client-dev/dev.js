@@ -1,4 +1,4 @@
-// Modo Dev — Consola de Telemetría (§4.6). Este módulo SOLO se sirve en
+// Modo Dev: Consola de Telemetría (§4.6). Este módulo SOLO se sirve en
 // desarrollo (/dev/*); en producción no existe y la app lo ignora.
 // Todas las métricas son reales: bus de eventos de la app + Performance API.
 

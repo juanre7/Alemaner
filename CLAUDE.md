@@ -19,14 +19,14 @@ Alemán Simultáneo: a German translator + grammar analyzer for Spanish speakers
 
 ## Architecture
 
-### Two deployment modes — the central design fact
+### Two deployment modes: the central design fact
 
 The same `client/` runs against a backend in one of two ways, decided at runtime in `client/js/api.js`:
 
 - **Proxy mode** (localhost / self-hosted): the browser calls the local Node proxy at `/api/analyze`, which holds the LLM call, provider routing, streaming, validation, and retry logic.
 - **Direct/BYOK mode** (GitHub Pages): there is no server. `api.js` calls the LLM provider (OpenRouter or Anthropic) *directly from the browser* using the user's own API key. `shouldUseDirectMode()` picks this when host is `alemaner.juanre.es` or `*.github.io`, or when `window.ALEMANER_CONFIG.apiMode === 'direct'`.
 
-Consequence: the system prompt and the `validateAnalysis`/`extractJson` logic are **duplicated** — once in `server/index.js` (authoritative) and once in `client/js/api.js` (for direct mode). If you change the prompt or the data schema, change it in `prompts/analyze.v1.md` **and** in the inlined copy in `api.js`. GitHub Pages does not run `server/index.js`.
+Consequence: the system prompt and the `validateAnalysis`/`extractJson` logic are **duplicated**: once in `server/index.js` (authoritative) and once in `client/js/api.js` (for direct mode). If you change the prompt or the data schema, change it in `prompts/analyze.v1.md` **and** in the inlined copy in `api.js`. GitHub Pages does not run `server/index.js`.
 
 ### Server (`server/index.js`)
 
@@ -43,23 +43,23 @@ One file, Node stdlib only. Serves static `client/`, serves `client-dev/` under 
 
 Vanilla ES modules, no framework, imported from `index.html`. `config.js` is a plain script (not a module) setting `window.ALEMANER_CONFIG` before the module graph loads.
 
-- `app.js` — orchestrator: dual input panels (direct DE→ES / reverse ES→DE), preset phrases, history, wires everything to `runAnalysis`.
-- `api.js` — proxy client + direct-mode client (see two-mode note above).
-- `render.js` — builds the results DOM; supports progressive/partial rendering during streaming.
-- `partial-json.js` — best-effort parse of incomplete JSON so streaming can paint before the object closes.
-- `settings.js` + `crypto.js` — BYOK key storage. The key is stored **AES-GCM encrypted at rest** in `localStorage` (`as_api_key_enc` envelope), decrypted into memory so `getApiKey()` is sync; migrates legacy plaintext `as_api_key`. Note `crypto.js`'s honest caveat: the derivation secret ships in the JS, so this is obfuscation, not password-grade encryption — its only job is to avoid a plaintext key in localStorage. The key never leaves the browser except as the `x-user-api-key` header to your own proxy (proxy mode) or straight to the provider (direct mode).
-- `history.js` — localStorage query history; clicking an entry restores a saved result with **no server call**.
-- `telemetry.js` — a minimal event bus the app *always* emits to; only Modo Dev listens.
-- `speech.js` — Web Speech synthesis for German pronunciation.
+- `app.js`: orchestrator, dual input panels (direct DE→ES / reverse ES→DE), preset phrases, history, wires everything to `runAnalysis`.
+- `api.js`: proxy client + direct-mode client (see two-mode note above).
+- `render.js`: builds the results DOM; supports progressive/partial rendering during streaming.
+- `partial-json.js`: best-effort parse of incomplete JSON so streaming can paint before the object closes.
+- `settings.js` + `crypto.js`: BYOK key storage. The key is stored **AES-GCM encrypted at rest** in `localStorage` (`as_api_key_enc` envelope), decrypted into memory so `getApiKey()` is sync; migrates legacy plaintext `as_api_key`. Note `crypto.js`'s honest caveat: the derivation secret ships in the JS, so this is obfuscation, not password-grade encryption; its only job is to avoid a plaintext key in localStorage. The key never leaves the browser except as the `x-user-api-key` header to your own proxy (proxy mode) or straight to the provider (direct mode).
+- `history.js`: localStorage query history; clicking an entry restores a saved result with **no server call**.
+- `telemetry.js`: a minimal event bus the app *always* emits to; only Modo Dev listens.
+- `speech.js`: Web Speech synthesis for German pronunciation.
 
 ### Modo Dev (`client-dev/`)
 
-Telemetry console (real latency/TTFT, fetch phases via Performance API, payloads), SSE-streaming toggle, and model selector. Loaded via a dynamic `import('/dev/dev.js')` in `app.js` that **fails silently in production** — the code is only served when `IS_DEV`, so production ships no trace of it. The model selector and `stream` flag are only honored by the proxy when `IS_DEV`.
+Telemetry console (real latency/TTFT, fetch phases via Performance API, payloads), SSE-streaming toggle, and model selector. Loaded via a dynamic `import('/dev/dev.js')` in `app.js` that **fails silently in production**: the code is only served when `IS_DEV`, so production ships no trace of it. The model selector and `stream` flag are only honored by the proxy when `IS_DEV`.
 
 ## Conventions
 
 - Comments and user-facing strings are in Spanish; code identifiers in English.
-- No dependencies anywhere — keep it that way (both server and client are stdlib/browser-API only).
+- No dependencies anywhere; keep it that way (both server and client are stdlib/browser-API only).
 - Comments reference PRD sections as `(§N)`; consult `PRD_aleman_simultaneo_v2.md` for the authoritative behavior spec.
 - When editing the data schema or system prompt, update all three of: `prompts/analyze.v1.md`, the `SYSTEM_PROMPT`/validation in `server/index.js`, and the duplicated copy in `client/js/api.js`.
 

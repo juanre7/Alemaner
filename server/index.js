@@ -1,4 +1,4 @@
-// Alemán Simultáneo — proxy único (Node, sin dependencias).
+// Alemán Simultáneo: proxy único (Node, sin dependencias).
 // `npm run dev` sirve cliente + proxy en modo desarrollo; `npm start` en producción.
 
 import { createServer } from 'node:http';
@@ -378,7 +378,7 @@ async function callOpenRouter({ apiKey, model, userText, direction, onChunk, onT
       { role: 'system', content: `${SYSTEM_PROMPT}\n\n${directionHint(direction)}` },
       { role: 'user', content: userText },
     ],
-    // Modo JSON del proveedor (§6) — deepseek-v4-flash lo soporta.
+    // Modo JSON del proveedor (§6): deepseek-v4-flash lo soporta.
     response_format: { type: 'json_object' },
   };
   // Los modelos híbridos (DeepSeek) razonan por defecto: para desactivar el

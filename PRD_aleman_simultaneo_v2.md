@@ -1,4 +1,4 @@
-# PRD — Alemán Simultáneo
+# PRD: Alemán Simultáneo
 
 Traductor y analizador gramatical de alemán para estudiantes hispanohablantes. Proyecto open source, autohosteable. Este documento es la especificación completa para reconstruir la plataforma desde cero.
 
@@ -35,7 +35,7 @@ No puede:
 - Superar los 1000 caracteres (bloqueo físico del input).
 - Interactuar con los campos mientras hay una consulta en curso.
 
-**B. Desarrollador (Modo Dev — solo builds de desarrollo)**
+**B. Desarrollador (Modo Dev, solo builds de desarrollo)**
 
 El Modo Dev **no existe en producción**: su código se excluye del bundle mediante flag de build (p. ej. `import.meta.env.DEV`). En desarrollo, añade:
 
@@ -124,7 +124,7 @@ El panel derecho muta según el estado:
   - **Botón de audio**: icono de megáfono circular. Usa `speechSynthesis` del navegador con voz alemana. Mientras habla: color ámbar, ligera ampliación, ondas animadas. Pulsar de nuevo o limpiar la caja lo detiene. Si el navegador no soporta síntesis o falla, el botón vuelve a su estado pasivo sin romper la interfaz.
   - **Pronunciación**: recuadro con icono de oído; transcripción fonética con grafía española (ej. "Wie geht es Ihnen?" → "vi guet es ínen").
   - **Explicación gramatical**: lista con viñetas ámbar. Declinaciones, casos, géneros, conjugaciones, orden sintáctico.
-  - **Vocabulario clave**: tabla de tres columnas — Alemán (ámbar, negrita), Significado, Categoría (cursiva: Sustantivo Masculino, Verbo, Preposición de Dativo...).
+  - **Vocabulario clave**: tabla de tres columnas: Alemán (ámbar, negrita), Significado, Categoría (cursiva: Sustantivo Masculino, Verbo, Preposición de Dativo...).
   - **Alternativas**: chips clicables con expresiones sinónimas en alemán. Clic: inyecta la alternativa en la caja de alemán, vacía la inversa y relanza el análisis (llamada real).
   - **Contextos de uso**: tarjetas de diálogo con frase situacional en alemán (negrita) y traducción en español (cursiva).
 
@@ -135,7 +135,7 @@ Todo el contenido del LLM se renderiza como **texto plano** (nunca `innerHTML`).
 Estética de consola retro de alto contraste, en la parte inferior de la columna derecha. **Todas las métricas son reales; nada simulado.**
 
 - **Cabecera**: luz de estado, título "TELEMETRÍA", dirección de la consulta.
-- **Métricas de latencia**: tiempo total de la última consulta con color dinámico (verde rápido / ámbar moderado), y **TTFT (tiempo al primer token)** cuando el streaming está activo — la métrica clave para comparar modelos.
+- **Métricas de latencia**: tiempo total de la última consulta con color dinámico (verde rápido / ámbar moderado), y **TTFT (tiempo al primer token)** cuando el streaming está activo: la métrica clave para comparar modelos.
 - **Fases del fetch**: desglose real vía Performance API cuando esté disponible (DNS, TLS, TTFB, descarga) más eventos de aplicación (petición enviada, primer token, respuesta completa, validación, render). Gráfico lineal SVG de tiempo acumulado por fase, con marcadores por nodo y chips de delta debajo (ej. "TTFB: 850ms · Δ +620ms").
 - **Logs de eventos**: lista cronometrada de eventos reales con código de color (cliente gris, red azul, éxito verde, error rojo).
 - **Payloads**: dos paneles colapsables con el Request Body y el Response JSON exactos, con resaltado de sintaxis.

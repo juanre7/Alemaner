@@ -1,4 +1,4 @@
-// Alemán Simultáneo — orquestador de la Estación de Trabajo.
+// Alemán Simultáneo: orquestador de la Estación de Trabajo.
 
 import { analyze, lastResourceTiming } from './api.js';
 import { bus } from './telemetry.js';

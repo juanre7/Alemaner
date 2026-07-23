@@ -1,6 +1,6 @@
 # Alemán Simultáneo
 
-Traductor y analizador gramatical de alemán para estudiantes hispanohablantes. Open source y autohosteable. Cada frase se deconstruye en traducción, pronunciación con grafía española, explicación gramatical, vocabulario clasificado, alternativas de expresión y contextos de uso — todo en una sola pantalla.
+Traductor y analizador gramatical de alemán para estudiantes hispanohablantes. Open source y autohosteable. Cada frase se deconstruye en traducción, pronunciación con grafía española, explicación gramatical, vocabulario clasificado, alternativas de expresión y contextos de uso, todo en una sola pantalla.
 
 La especificación completa está en [PRD_aleman_simultaneo_v2.md](PRD_aleman_simultaneo_v2.md).
 
@@ -20,8 +20,8 @@ Abre `http://localhost:8787`.
 
 Dos adaptadores integrados, elegibles con `LLM_PROVIDER` en `.env`:
 
-- **openrouter** — por defecto en `.env.example`: `deepseek/deepseek-v4-flash` con razonamiento `high` (`LLM_REASONING_EFFORT`). El enrutado `LLM_PROVIDER_SORT=auto` optimiza la **relación tokens/latencia con mediciones propias**: el proxy cronometra cada consulta real (TTFT y tokens/s, identificando al proveedor que sirvió cada respuesta), mantiene una media móvil por proveedor y enruta con `provider.order` ordenado por tiempo total estimado (`latencia + tokens esperados ÷ throughput`), con fallback automático. Cada 5 consultas explora un proveedor sin medir (o con la medición más antigua) para mantener el ranking al día; en frío arranca con `sort: throughput`. Fuerza el modo JSON del proveedor.
-- **anthropic** — Claude vía Messages API.
+- **openrouter**: por defecto en `.env.example`: `deepseek/deepseek-v4-flash` con razonamiento `high` (`LLM_REASONING_EFFORT`). El enrutado `LLM_PROVIDER_SORT=auto` optimiza la **relación tokens/latencia con mediciones propias**: el proxy cronometra cada consulta real (TTFT y tokens/s, identificando al proveedor que sirvió cada respuesta), mantiene una media móvil por proveedor y enruta con `provider.order` ordenado por tiempo total estimado (`latencia + tokens esperados ÷ throughput`), con fallback automático. Cada 5 consultas explora un proveedor sin medir (o con la medición más antigua) para mantener el ranking al día; en frío arranca con `sort: throughput`. Fuerza el modo JSON del proveedor.
+- **anthropic**: Claude vía Messages API.
 
 ## Claves API (modo dual)
 
