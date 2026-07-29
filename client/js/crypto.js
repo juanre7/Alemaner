@@ -17,8 +17,13 @@ export function isCryptoAvailable() {
 
 export function bufToB64(buf) {
   const bytes = new Uint8Array(buf);
+  if (bytes.length < 65535) {
+    return btoa(String.fromCharCode.apply(null, bytes));
+  }
   let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
+  for (let i = 0; i < bytes.length; i += 65535) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 65535));
+  }
   return btoa(bin);
 }
 
