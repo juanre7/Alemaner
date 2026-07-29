@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateAnalysis } from './index.js';
+import { validateAnalysis } from '../shared/analysis.js';
 
 test('validateAnalysis: Invalid Input Types', async (t) => {
   const invalidInputs = [

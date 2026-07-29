@@ -28,6 +28,7 @@ jobs:
         shell: bash
         run: |
           cp CNAME client/CNAME
+          cp -r shared client/shared
           touch client/.nojekyll
 
       - name: Upload artifact
