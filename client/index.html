@@ -41,14 +41,19 @@
       <label class="settings-label" for="api-key-input">Tu clave API (opcional)</label>
       <input id="api-key-input" type="password" autocomplete="off" spellcheck="false"
              placeholder="sk-or-... / sk-ant-...">
+
+      <label class="settings-label" for="model-input" style="margin-top: 1rem;">Modelo (opcional)</label>
+      <input id="model-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Ej: deepseek/deepseek-v4-flash">
+
       <p class="settings-note">
         La clave (OpenRouter o Anthropic, según el proveedor configurado en el servidor) se guarda
         únicamente en el <code>localStorage</code> de este navegador y se envía al proxy en cada
         consulta. El servidor la usa sin almacenarla ni registrarla en logs.
       </p>
       <div class="settings-actions">
-        <button id="api-key-save" class="btn-primary" type="button">Guardar clave</button>
-        <button id="api-key-clear" class="btn-ghost" type="button">Borrar clave</button>
+        <button id="api-key-save" class="btn-primary" type="button">Guardar ajustes</button>
+        <button id="api-key-clear" class="btn-ghost" type="button">Borrar ajustes</button>
       </div>
       <p id="settings-status" class="settings-status" role="status"></p>
     </div>

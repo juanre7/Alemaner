@@ -490,10 +490,14 @@ async function handleAnalyze(req, res, ip) {
   const apiKey = (typeof userKey === 'string' && userKey.trim()) ? userKey.trim() : CONFIG.apiKey;
   if (!apiKey) return sendJson(res, 401, { error: 'Configura una clave API en Ajustes' });
 
-  // El selector de modelo solo se respeta en desarrollo (§4.6).
+  // El selector de modelo se respeta si estamos en desarrollo, si el usuario
+  // proporciona su propia clave API (BYOK), o si el modelo está en la lista permitida.
   let model = CONFIG.defaultModel;
-  if (IS_DEV && typeof body.model === 'string' && CONFIG.models.includes(body.model)) {
-    model = body.model;
+  if (typeof body.model === 'string' && body.model.trim()) {
+    const requestedModel = body.model.trim();
+    if (IS_DEV || userKey || CONFIG.models.includes(requestedModel)) {
+      model = requestedModel;
+    }
   }
 
   const controller = new AbortController();
