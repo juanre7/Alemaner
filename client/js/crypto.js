@@ -15,14 +15,14 @@ export function isCryptoAvailable() {
   return !!subtle;
 }
 
-function bufToB64(buf) {
+export function bufToB64(buf) {
   const bytes = new Uint8Array(buf);
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin);
 }
 
-function b64ToBuf(b64) {
+export function b64ToBuf(b64) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
