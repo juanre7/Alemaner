@@ -132,12 +132,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .btn-icon:hover { color: var(--slate-700); background: var(--slate-100); }
 .settings-label { display: block; font-size: 13px; font-weight: 600; color: var(--slate-600); margin-bottom: 6px; }
-#api-key-input {
+#api-key-input, #model-input {
   width: 100%; padding: 10px 12px; border: 1px solid var(--slate-200);
   border-radius: 8px; font-family: var(--font-mono); font-size: 13px;
   color: var(--slate-800); background: var(--slate-50);
 }
-#api-key-input:focus { outline: 2px solid var(--amber-200); border-color: var(--amber-500); }
+#api-key-input:focus, #model-input:focus { outline: 2px solid var(--amber-200); border-color: var(--amber-500); }
 .settings-note {
   font-size: 12.5px; color: var(--slate-500); background: var(--amber-50);
   border: 1px solid var(--amber-100); border-radius: 8px; padding: 10px 12px; margin: 12px 0;

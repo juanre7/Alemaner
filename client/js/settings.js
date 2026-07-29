@@ -10,9 +10,14 @@ const LEGACY_KEY = 'as_api_key';     // texto plano de versiones anteriores
 
 // Clave descifrada en memoria durante la sesión. getApiKey() la devuelve.
 let cachedKey = '';
+let cachedModel = '';
 
 export function getApiKey() {
   return cachedKey;
+}
+
+export function getUserModel() {
+  return cachedModel;
 }
 
 function readStored(key) {
@@ -44,7 +49,20 @@ export async function loadApiKey() {
     try { localStorage.removeItem(LEGACY_KEY); } catch { /* nada */ }
   }
 
+
+  cachedModel = readStored('as_model');
+
   return cachedKey;
+}
+
+export function setUserModel(model) {
+  const trimmed = (model || '').trim();
+  cachedModel = trimmed;
+  if (trimmed) {
+    localStorage.setItem('as_model', trimmed);
+  } else {
+    localStorage.removeItem('as_model');
+  }
 }
 
 /** Cifra y guarda el valor (o lo borra si viene vacío). Actualiza la caché. */
@@ -82,12 +100,14 @@ export async function initSettings() {
   const openBtn = document.getElementById('settings-btn');
   const closeBtn = document.getElementById('settings-close');
   const input = document.getElementById('api-key-input');
+  const modelInput = document.getElementById('model-input');
   const saveBtn = document.getElementById('api-key-save');
   const clearBtn = document.getElementById('api-key-clear');
   const status = document.getElementById('settings-status');
 
   function open() {
     input.value = getApiKey();
+    modelInput.value = getUserModel();
     status.textContent = getApiKey() ? 'Hay una clave cifrada guardada en este navegador.' : '';
     backdrop.hidden = false;
     input.focus();
@@ -101,12 +121,14 @@ export async function initSettings() {
 
   saveBtn.addEventListener('click', async () => {
     const value = input.value.trim();
+    const modelValue = modelInput.value.trim();
     saveBtn.disabled = true;
     try {
       await setApiKey(value);
+      setUserModel(modelValue);
       status.textContent = value
-        ? 'Clave cifrada y guardada en este navegador.'
-        : 'Clave vacía: se usará la clave del servidor si existe.';
+        ? 'Ajustes guardados. Clave cifrada en este navegador.'
+        : 'Ajustes guardados. Clave vacía: se usará la del servidor si existe.';
     } catch {
       status.textContent = 'No se pudo guardar (almacenamiento no disponible).';
     } finally {
@@ -116,7 +138,9 @@ export async function initSettings() {
 
   clearBtn.addEventListener('click', async () => {
     await setApiKey('');
+    setUserModel('');
     input.value = '';
-    status.textContent = 'Clave borrada de este navegador.';
+    modelInput.value = '';
+    status.textContent = 'Ajustes borrados de este navegador.';
   });
 }

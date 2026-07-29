@@ -3,6 +3,7 @@
 
 import { bus } from './telemetry.js';
 import { tryParsePartial } from './partial-json.js';
+import { getUserModel } from './settings.js';
 
 const ANALYZE_PATH = '/api/analyze';
 const API_BASE_URL = normalizeApiBase(window.ALEMANER_CONFIG?.apiBaseUrl);
@@ -71,13 +72,15 @@ export class ApiError extends Error {
  * onThinking(chars) se invoca mientras el modelo razona (solo streaming SSE).
  */
 export async function analyze({ text, direction, model, stream, apiKey, onPartial, onThinking }) {
+  const finalModel = getUserModel() || model;
+
   if (DIRECT_MODE) {
-    return analyzeDirect({ text, direction, model, apiKey });
+    return analyzeDirect({ text, direction, model: finalModel, apiKey });
   }
 
   const requestBody = { text, direction };
   if (stream) requestBody.stream = true;
-  if (model) requestBody.model = model;
+  if (finalModel) requestBody.model = finalModel;
 
   const headers = { 'content-type': 'application/json' };
   if (apiKey) headers['x-user-api-key'] = apiKey;
@@ -85,7 +88,7 @@ export async function analyze({ text, direction, model, stream, apiKey, onPartia
   const t0 = performance.now();
   let ttft = null;
 
-  bus.emit('start', { direction, stream: !!stream, model: model || null, requestBody, t0 });
+  bus.emit('start', { direction, stream: !!stream, model: finalModel || null, requestBody, t0 });
   bus.emit('log', { kind: 'client', msg: `Consulta preparada (${direction === 'direct' ? 'DE→ES' : 'ES→DE'}, ${stream ? 'streaming' : 'buffer'})` });
   bus.emit('phase', { name: 'Petición enviada', t: 0 });
   bus.emit('log', { kind: 'net', msg: `POST ${ANALYZE_URL}` });
