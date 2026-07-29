@@ -91,10 +91,28 @@ function loadDotEnv(path) {
 const RATE_LIMIT = { windowMs: 60_000, max: 20 };
 const rateBuckets = new Map();
 
+// Limpieza periódica para evitar fugas de memoria (DoS memory leak).
+// Borra las IPs que no hayan hecho peticiones en el último periodo.
+const cleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of rateBuckets.entries()) {
+    // Si la última petición es más antigua que la ventana, se borra la IP.
+    if (hits.length === 0 || now - hits[hits.length - 1] >= RATE_LIMIT.windowMs) {
+      rateBuckets.delete(ip);
+    }
+  }
+}, RATE_LIMIT.windowMs);
+// No impedir que Node.js termine si no hay más tareas pendientes
+cleanupInterval.unref();
+
 function rateLimited(ip) {
   const now = Date.now();
   const hits = (rateBuckets.get(ip) || []).filter((t) => now - t < RATE_LIMIT.windowMs);
-  if (hits.length >= RATE_LIMIT.max) { rateBuckets.set(ip, hits); return true; }
+  if (hits.length >= RATE_LIMIT.max) {
+    rateBuckets.set(ip, hits);
+    return true;
+  }
+  // Si la limpieza periódica hubiera borrado la entrada, se vuelve a crear al estar vacía
   hits.push(now);
   rateBuckets.set(ip, hits);
   return false;
