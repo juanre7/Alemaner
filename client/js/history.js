@@ -21,7 +21,7 @@ function load() {
 
 // Tamaño aproximado en bytes del historial serializado (UTF-16 en la práctica,
 // pero comparamos contra un presupuesto propio: basta con ser consistentes).
-function byteSize(str) {
+export function byteSize(str) {
   try { return new Blob([str]).size; } catch { return str.length * 2; }
 }
 
