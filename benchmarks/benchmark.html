@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head><title>Benchmark</title></head>
+<body>
+<div id="results"></div>
+<script>
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+const entries = Array.from({length: 50000}, (_, i) => ({ german: 'Wort ' + i, origin: 'Origin ' + i }));
+
+function testOneByOne() {
+  const list = el('div', 'etym-list');
+  const start = performance.now();
+  for (let j = 0; j < 5; j++) {
+    for (const entry of entries) {
+      const item = el('div', 'etym-item');
+      item.append(el('span', 'etym-word', entry.german));
+      item.append(el('p', 'etym-origin', entry.origin));
+      list.append(item);
+    }
+  }
+  return performance.now() - start;
+}
+
+function testArray() {
+  const list = el('div', 'etym-list');
+  const start = performance.now();
+  for (let j = 0; j < 5; j++) {
+    const items = [];
+    for (const entry of entries) {
+      const item = el('div', 'etym-item');
+      item.append(el('span', 'etym-word', entry.german));
+      item.append(el('p', 'etym-origin', entry.origin));
+      items.push(item);
+    }
+    list.append(...items);
+  }
+  return performance.now() - start;
+}
+
+function testFragment() {
+  const list = el('div', 'etym-list');
+  const start = performance.now();
+  for (let j = 0; j < 5; j++) {
+    const fragment = document.createDocumentFragment();
+    for (const entry of entries) {
+      const item = el('div', 'etym-item');
+      item.append(el('span', 'etym-word', entry.german));
+      item.append(el('p', 'etym-origin', entry.origin));
+      fragment.append(item);
+    }
+    list.append(fragment);
+  }
+  return performance.now() - start;
+}
+
+(async () => {
+    // warmup
+    testOneByOne();
+    testArray();
+    testFragment();
+
+    await new Promise(r => setTimeout(r, 100));
+
+    const p1 = testOneByOne();
+    const p2 = testArray();
+    const p3 = testFragment();
+
+    document.getElementById('results').innerText = JSON.stringify({oneByOne: p1, array: p2, fragment: p3});
+    console.log(JSON.stringify({oneByOne: p1, array: p2, fragment: p3}));
+})();
+</script>
+</body>
+</html>

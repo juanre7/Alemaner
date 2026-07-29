@@ -119,7 +119,8 @@ export function renderLoading(opts = {}) {
   const section2 = el('div', 'skel-section');
   section2.append(el('div', 'skel-line skel-head'));
   const chips = el('div', 'skel-chips');
-  for (let i = 0; i < 3; i++) chips.append(el('div', 'skel-chip'));
+  const chipItems = Array.from({ length: 3 }, () => el('div', 'skel-chip'));
+  chips.append(...chipItems);
   section2.append(chips);
   skeleton.append(section1, section2);
   card.append(skeleton);
@@ -321,15 +322,16 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
   if (translations.length) {
     const section = makeSection(card, '🌍', 'Traducción simultánea');
     const list = el('div', 'multi-trans');
-    for (const t of translations) {
+    const items = translations.map(t => {
       const item = el('div', 'mt-item');
       const head = el('div', 'mt-head');
       head.append(el('span', 'mt-lang', LANG_LABELS[t.lang]));
       head.append(el('span', 'mt-text', t.text));
       item.append(head);
       if (t.note) item.append(el('p', 'mt-note', t.note));
-      list.append(item);
-    }
+      return item;
+    });
+    list.append(...items);
     section.append(list);
   }
 
@@ -347,7 +349,8 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
   if (notes.length) {
     const section = makeSection(card, '📖', 'Explicación gramatical');
     const list = el('ul', 'grammar-list');
-    for (const note of notes) list.append(el('li', null, note));
+    const items = notes.map(note => el('li', null, note));
+    list.append(...items);
     section.append(list);
   }
 
@@ -359,17 +362,19 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
     const table = el('table', 'vocab-table');
     const thead = el('thead');
     const headRow = el('tr');
-    for (const label of ['Alemán', 'Significado', 'Categoría']) headRow.append(el('th', null, label));
+    const headItems = ['Alemán', 'Significado', 'Categoría'].map(label => el('th', null, label));
+    headRow.append(...headItems);
     thead.append(headRow);
     table.append(thead);
     const tbody = el('tbody');
-    for (const item of vocab) {
+    const rows = vocab.map(item => {
       const tr = el('tr');
       tr.append(el('td', 'vocab-de', item.german || ''));
       tr.append(el('td', null, item.meaning || ''));
       tr.append(el('td', 'vocab-cat', item.category || ''));
-      tbody.append(tr);
-    }
+      return tr;
+    });
+    tbody.append(...rows);
     table.append(tbody);
     wrap.append(table);
     section.append(wrap);
@@ -380,12 +385,13 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
   if (etymology.length) {
     const section = makeSection(card, '🌱', 'Etimología');
     const list = el('div', 'etym-list');
-    for (const entry of etymology) {
+    const items = etymology.map(entry => {
       const item = el('div', 'etym-item');
       item.append(el('span', 'etym-word', entry.german));
       item.append(el('p', 'etym-origin', entry.origin));
-      list.append(item);
-    }
+      return item;
+    });
+    list.append(...items);
     section.append(list);
   }
 
@@ -394,12 +400,13 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
   if (alternatives.length) {
     const section = makeSection(card, '🔁', 'Alternativas');
     const chips = el('div', 'alt-chips');
-    for (const alt of alternatives) {
+    const items = alternatives.map(alt => {
       const chip = el('button', 'alt-chip', alt);
       chip.type = 'button';
       chip.addEventListener('click', () => onAlternative?.(alt));
-      chips.append(chip);
-    }
+      return chip;
+    });
+    chips.append(...items);
     section.append(chips);
   }
 
@@ -408,12 +415,13 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
   if (examples.length) {
     const section = makeSection(card, '💬', 'Contextos de uso');
     const cards = el('div', 'example-cards');
-    for (const example of examples) {
+    const items = examples.map(example => {
       const exampleCard = el('div', 'example-card');
       exampleCard.append(el('p', 'example-de', example.german || ''));
       if (example.spanish) exampleCard.append(el('p', 'example-es', example.spanish));
-      cards.append(exampleCard);
-    }
+      return exampleCard;
+    });
+    cards.append(...items);
     section.append(cards);
   }
 
