@@ -6,11 +6,13 @@ import { readFile, stat } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractJson } from '../shared/json.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CLIENT_DIR = join(ROOT, 'client');
 const DEV_DIR = join(ROOT, 'client-dev');
+const SHARED_DIR = join(ROOT, 'shared');
 
 const IS_DEV = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
 
@@ -170,16 +172,6 @@ function validateAnalysis(raw) {
     .map((e) => ({ german: e.german, spanish: e.spanish }));
 
   return { ok: true, value: out };
-}
-
-function extractJson(text) {
-  let t = text.trim();
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) t = fence[1].trim();
-  const start = t.indexOf('{');
-  const end = t.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return null;
-  try { return JSON.parse(t.slice(start, end + 1)); } catch { return null; }
 }
 
 // ---------------------------------------------------------------------------
@@ -667,6 +659,9 @@ const server = createServer(async (req, res) => {
     if (url.pathname.startsWith('/dev/')) {
       if (!IS_DEV) { res.writeHead(404); return res.end(); }
       return await serveStatic(res, DEV_DIR, url.pathname.slice('/dev/'.length) || 'index.html');
+    }
+    if (url.pathname.startsWith('/shared/')) {
+      return await serveStatic(res, SHARED_DIR, url.pathname.slice('/shared/'.length));
     }
     return await serveStatic(res, CLIENT_DIR, url.pathname === '/' ? 'index.html' : url.pathname);
   } catch (err) {

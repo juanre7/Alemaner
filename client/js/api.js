@@ -4,6 +4,7 @@
 import { bus } from './telemetry.js';
 import { tryParsePartial } from './partial-json.js';
 import { getUserModel } from './settings.js';
+import { extractJson } from '../shared/json.js';
 
 const ANALYZE_PATH = '/api/analyze';
 const API_BASE_URL = normalizeApiBase(window.ALEMANER_CONFIG?.apiBaseUrl);
@@ -341,17 +342,6 @@ async function providerErrorMessage(response) {
     if (body?.error) return String(body.error);
   } catch { /* cuerpo no JSON */ }
   return `El proveedor respondio con el estado ${response.status}`;
-}
-
-function extractJson(text) {
-  if (typeof text !== 'string') return null;
-  let t = text.trim();
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) t = fence[1].trim();
-  const start = t.indexOf('{');
-  const end = t.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return null;
-  try { return JSON.parse(t.slice(start, end + 1)); } catch { return null; }
 }
 
 function validateAnalysis(raw) {
