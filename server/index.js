@@ -63,6 +63,12 @@ const CONFIG = {
   // Con razonamiento activo hace falta margen: los tokens de "thinking" cuentan.
   maxTokens: Number(process.env.LLM_MAX_TOKENS) || (REASONING_EFFORT ? 12_000 : 4000),
   maxChars: 1000,
+  // Detrás de un proxy inverso, req.socket.remoteAddress es siempre la IP del
+  // proxy y todo el tráfico cae en el mismo cubo del rate limit. Leer
+  // x-forwarded-for lo arregla, pero solo es fiable si de verdad hay un proxy
+  // delante que reescriba la cabecera: sin él, cualquiera la falsea y se salta
+  // el límite. Por eso va desactivado salvo que se active a mano.
+  trustProxy: /^(1|true|yes)$/i.test(process.env.TRUST_PROXY || ''),
   allowedOrigins: new Set((process.env.CORS_ORIGINS
     || 'http://localhost:8787,http://127.0.0.1:8787,https://alemaner.juanre.es,http://alemaner.juanre.es,https://juanre7.github.io')
     .split(',')
@@ -104,6 +110,22 @@ const cleanupInterval = setInterval(() => {
 }, RATE_LIMIT.windowMs);
 // No impedir que Node.js termine si no hay más tareas pendientes
 cleanupInterval.unref();
+
+// IP del cliente para el rate limit (§5). Con TRUST_PROXY se toma la primera
+// entrada de x-forwarded-for (el cliente original) o x-real-ip; sin él se usa
+// siempre la conexión, que es lo único no falsificable.
+function clientIp(req) {
+  if (CONFIG.trustProxy) {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+      const first = String(forwarded).split(',')[0].trim();
+      if (first) return first;
+    }
+    const real = req.headers['x-real-ip'];
+    if (real) return String(real).trim();
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
 
 function rateLimited(ip) {
   const now = Date.now();
@@ -585,7 +607,7 @@ async function serveStatic(res, baseDir, urlPath) {
 // ---------------------------------------------------------------------------
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const ip = req.socket.remoteAddress || 'unknown';
+  const ip = clientIp(req);
   const corsOk = applyCors(req, res);
 
   try {
