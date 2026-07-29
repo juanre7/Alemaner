@@ -12,6 +12,10 @@ Traductor y analizador gramatical de alemán para estudiantes hispanohablantes. 
 
 La especificación completa está en [PRD_aleman_simultaneo_v2.md](PRD_aleman_simultaneo_v2.md).
 
+<div align="center">
+  <img src="docs/screenshot.png" alt="Alemán Simultáneo UI" width="800">
+</div>
+
 ## 🚀 Arranque rápido
 
 Requisitos: Node 18+ (sin dependencias npm; no hay `npm install`).
