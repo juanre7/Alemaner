@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server/index.js --dev",
     "start": "node server/index.js",
-    "test": "node --test client/**/*.test.js"
+    "test": "node --test client shared server"
   },
   "engines": {
     "node": ">=18"
