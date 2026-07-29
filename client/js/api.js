@@ -343,7 +343,7 @@ async function providerErrorMessage(response) {
   return `El proveedor respondio con el estado ${response.status}`;
 }
 
-function extractJson(text) {
+export function extractJson(text) {
   if (typeof text !== 'string') return null;
   let t = text.trim();
   const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
