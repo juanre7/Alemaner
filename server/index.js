@@ -201,7 +201,14 @@ async function modelProviders(model, signal) {
   let providers = [];
   try {
     const origin = new URL(CONFIG.apiUrl).origin;
-    const response = await fetch(`${origin}/api/v1/models/${model}/endpoints`, { signal });
+    // El id del modelo llega del cliente (selector de Modo Dev), así que se
+    // escapa segmento a segmento y se comprueba la ruta ya resuelta: sin esto
+    // un `../../` escaparía de /api/v1/models/ y apuntaría a otro endpoint del
+    // mismo origen (SSRF por path traversal).
+    const safeModel = String(model).split('/').map(encodeURIComponent).join('/');
+    const url = new URL(`/api/v1/models/${safeModel}/endpoints`, origin);
+    if (!url.pathname.startsWith('/api/v1/models/')) throw new Error('Modelo con ruta inválida');
+    const response = await fetch(url, { signal });
     if (response.ok) {
       const json = await response.json();
       const seen = new Set();
