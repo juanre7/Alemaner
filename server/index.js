@@ -183,7 +183,15 @@ async function modelProviders(model, signal) {
   let providers = [];
   try {
     const origin = new URL(CONFIG.apiUrl).origin;
-    const response = await fetch(`${origin}/api/v1/models/${model}/endpoints`, { signal });
+    const safeModel = String(model).split('/').map(encodeURIComponent).join('/');
+    const url = new URL(`/api/v1/models/${safeModel}/endpoints`, origin);
+
+    // Prevent SSRF via Path Traversal by asserting the resolved path
+    if (!url.pathname.startsWith('/api/v1/models/')) {
+      throw new Error('Invalid model path');
+    }
+
+    const response = await fetch(url, { signal });
     if (response.ok) {
       const json = await response.json();
       const seen = new Set();
