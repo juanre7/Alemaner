@@ -363,13 +363,13 @@ export function renderResult({ analysis, originalText, elapsed, partial, onAlter
     thead.append(headRow);
     table.append(thead);
     const tbody = el('tbody');
-    for (const item of vocab) {
+    tbody.append(...vocab.map((item) => {
       const tr = el('tr');
       tr.append(el('td', 'vocab-de', item.german || ''));
       tr.append(el('td', null, item.meaning || ''));
       tr.append(el('td', 'vocab-cat', item.category || ''));
-      tbody.append(tr);
-    }
+      return tr;
+    }));
     table.append(tbody);
     wrap.append(table);
     section.append(wrap);
