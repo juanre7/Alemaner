@@ -674,10 +674,15 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(CONFIG.port, () => {
-  console.log(`Alemán Simultáneo ${IS_DEV ? '[DEV]' : '[PROD]'} → http://localhost:${CONFIG.port}`);
-  console.log(`Proveedor: ${CONFIG.provider} · Modelo: ${CONFIG.defaultModel}`
-    + (CONFIG.reasoningEffort ? ` · Razonamiento: ${CONFIG.reasoningEffort}` : '')
-    + (CONFIG.provider === 'openrouter' ? ` · Enrutado: ${CONFIG.providerSort}` : ''));
-  if (!CONFIG.apiKey) console.log('Sin clave de servidor: los usuarios deberán usar BYOK (Ajustes).');
-});
+const isMain = process.argv[1] && resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1]);
+if (isMain) {
+  server.listen(CONFIG.port, () => {
+    console.log(`Alemán Simultáneo ${IS_DEV ? '[DEV]' : '[PROD]'} → http://localhost:${CONFIG.port}`);
+    console.log(`Proveedor: ${CONFIG.provider} · Modelo: ${CONFIG.defaultModel}`
+      + (CONFIG.reasoningEffort ? ` · Razonamiento: ${CONFIG.reasoningEffort}` : '')
+      + (CONFIG.provider === 'openrouter' ? ` · Enrutado: ${CONFIG.providerSort}` : ''));
+    if (!CONFIG.apiKey) console.log('Sin clave de servidor: los usuarios deberán usar BYOK (Ajustes).');
+  });
+}
+
+export { validateAnalysis };
