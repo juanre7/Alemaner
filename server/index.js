@@ -560,7 +560,13 @@ async function serveStatic(res, baseDir, urlPath) {
 // ---------------------------------------------------------------------------
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const ip = req.socket.remoteAddress || 'unknown';
+  const xForwardedFor = req.headers['x-forwarded-for'];
+  let ip = req.socket.remoteAddress || 'unknown';
+  if (xForwardedFor) {
+    ip = xForwardedFor.split(',')[0].trim();
+  } else if (req.headers['x-real-ip']) {
+    ip = req.headers['x-real-ip'].trim();
+  }
   const corsOk = applyCors(req, res);
 
   try {
