@@ -42,34 +42,46 @@ export function validateAnalysis(raw) {
 
   // Traducción simultánea ES/EN/FR con matices (solo entrada alemana).
   // Tolerante: si el modelo lo omite, se degrada a [] en vez de reintentar.
-  out.translations = Array.isArray(raw.translations)
-    ? raw.translations
-      .filter((t) => t && TRANSLATION_LANGS.has(t.lang) && typeof t.text === 'string' && t.text.trim())
-      .map((t) => ({ lang: t.lang, text: t.text, note: typeof t.note === 'string' ? t.note : '' }))
-    : [];
+  out.translations = [];
+  if (Array.isArray(raw.translations)) {
+    for (const t of raw.translations) {
+      if (t && TRANSLATION_LANGS.has(t.lang) && typeof t.text === 'string' && t.text.trim()) {
+        out.translations.push({ lang: t.lang, text: t.text, note: typeof t.note === 'string' ? t.note : '' });
+      }
+    }
+  }
 
   if (!Array.isArray(raw.grammarNotes)) return { ok: false, error: 'Falta el campo "grammarNotes"' };
   out.grammarNotes = raw.grammarNotes.filter((n) => typeof n === 'string');
 
   if (!Array.isArray(raw.vocabulary)) return { ok: false, error: 'Falta el campo "vocabulary"' };
-  out.vocabulary = raw.vocabulary
-    .filter((v) => v && typeof v.german === 'string' && typeof v.meaning === 'string')
-    .map((v) => ({ german: v.german, meaning: v.meaning, category: typeof v.category === 'string' ? v.category : '' }));
+  out.vocabulary = [];
+  for (const v of raw.vocabulary) {
+    if (v && typeof v.german === 'string' && typeof v.meaning === 'string') {
+      out.vocabulary.push({ german: v.german, meaning: v.meaning, category: typeof v.category === 'string' ? v.category : '' });
+    }
+  }
 
   // Etimología: opcional por diseño (palabras sueltas o términos difíciles).
-  out.etymology = Array.isArray(raw.etymology)
-    ? raw.etymology
-      .filter((e) => e && typeof e.german === 'string' && typeof e.origin === 'string' && e.origin.trim())
-      .map((e) => ({ german: e.german, origin: e.origin }))
-    : [];
+  out.etymology = [];
+  if (Array.isArray(raw.etymology)) {
+    for (const e of raw.etymology) {
+      if (e && typeof e.german === 'string' && typeof e.origin === 'string' && e.origin.trim()) {
+        out.etymology.push({ german: e.german, origin: e.origin });
+      }
+    }
+  }
 
   if (!Array.isArray(raw.alternatives)) return { ok: false, error: 'Falta el campo "alternatives"' };
   out.alternatives = raw.alternatives.filter((a) => typeof a === 'string' && a.trim());
 
   if (!Array.isArray(raw.examples)) return { ok: false, error: 'Falta el campo "examples"' };
-  out.examples = raw.examples
-    .filter((e) => e && typeof e.german === 'string' && typeof e.spanish === 'string')
-    .map((e) => ({ german: e.german, spanish: e.spanish }));
+  out.examples = [];
+  for (const e of raw.examples) {
+    if (e && typeof e.german === 'string' && typeof e.spanish === 'string') {
+      out.examples.push({ german: e.german, spanish: e.spanish });
+    }
+  }
 
   return { ok: true, value: out };
 }
