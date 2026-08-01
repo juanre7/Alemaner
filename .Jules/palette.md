@@ -1,0 +1,3 @@
+## 2026-08-01 - Keyboard Accessibility Enhancements
+**Learning:** Found a classic accessibility issue where a secondary interactive action (deleting a history item) was only visible on mouse `:hover`. Keyboard navigation via "Tab" caused focus to land on an invisible element, which is disorienting for screen reader and keyboard users.
+**Action:** Always pair `:hover` with `:focus-within` or `:focus` (depending on the container structure) when toggling visibility of actions inside a row or card. Furthermore, applying a global `button:focus-visible` ensures no button is ever left without clear interaction feedback for keyboard users.
