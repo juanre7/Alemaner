@@ -55,6 +55,7 @@ body {
 
 button { font-family: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: 0.55; }
+button:focus-visible { outline: 2px solid var(--amber-500); outline-offset: 2px; border-radius: 2px; }
 
 /* ============ Cabecera ============ */
 
@@ -322,7 +323,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   opacity: 0; transition: opacity 0.12s, background 0.12s, color 0.12s;
   display: flex; align-items: center; justify-content: center;
 }
-.history-row:hover .history-del { opacity: 1; }
+.history-row:hover .history-del,
+.history-row:focus-within .history-del { opacity: 1; }
 .history-del:hover { background: var(--red-50); color: var(--red-600); }
 @media (hover: none) { .history-del { opacity: 1; } }
 
