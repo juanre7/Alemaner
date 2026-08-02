@@ -248,6 +248,8 @@ function renderPhraseGrid() {
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'phrase-toggle';
+    toggle.setAttribute('aria-expanded', state.phrasesExpanded.toString());
+    toggle.setAttribute('aria-controls', 'phrase-grid');
     toggle.textContent = state.phrasesExpanded
       ? 'Mostrar menos'
       : `Ver ${phrases.length - PHRASE_PREVIEW_LIMIT} más`;
@@ -347,6 +349,8 @@ function renderHistory(items) {
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'phrase-toggle';
+    toggle.setAttribute('aria-expanded', state.historyExpanded.toString());
+    toggle.setAttribute('aria-controls', 'history-list');
     toggle.textContent = state.historyExpanded
       ? 'Mostrar menos'
       : `Ver ${items.length - HISTORY_PREVIEW_LIMIT} más`;
