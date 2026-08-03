@@ -1,0 +1,3 @@
+## 2024-06-25 - Programmatic Association of Visual Labels
+**Learning:** Visual labels implemented with plain `<div>` elements without the `for` attribute and `id` references are completely ignored by screen readers, making corresponding inputs inaccessible even when the label is visually obvious adjacent to it.
+**Action:** Always link visual labels built with custom HTML structures (like `.panel-label`) to their corresponding inputs using `aria-labelledby` with matching `id` attributes.

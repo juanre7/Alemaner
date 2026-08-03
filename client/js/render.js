@@ -195,6 +195,7 @@ function buildInlineKey(onRetry) {
   const row = el('div', 'inline-key-row');
   const input = el('input', 'inline-key-input');
   input.type = 'password';
+  input.setAttribute('aria-label', 'Tu clave API de OpenRouter o Anthropic');
   input.autocomplete = 'off';
   input.spellcheck = false;
   input.placeholder = 'sk-or-... / sk-ant-...';
