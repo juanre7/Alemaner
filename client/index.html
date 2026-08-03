@@ -69,11 +69,12 @@
         <div class="station-panels">
 
           <div class="station-panel">
-            <div class="panel-label"><span class="flag" aria-hidden="true">🇩🇪</span> Alemán</div>
+            <div class="panel-label" id="label-de"><span class="flag" aria-hidden="true">🇩🇪</span> Alemán</div>
             <div class="textarea-wrap">
               <!-- lang="de" pide al teclado del sistema (Gboard en Android, teclado
                    de iOS) que cambie a alemán al enfocar esta caja. -->
               <textarea id="input-de" maxlength="1000" rows="4"
+                aria-labelledby="label-de"
                 lang="de" inputmode="text"
                 autocapitalize="sentences" autocorrect="on" spellcheck="true"
                 placeholder="Escribe palabras, frases o textos en alemán..."></textarea>
@@ -88,9 +89,10 @@
           <div class="station-divider" aria-hidden="true"></div>
 
           <div class="station-panel">
-            <div class="panel-label">Español / EN / FR</div>
+            <div class="panel-label" id="label-rev">Español / EN / FR</div>
             <div class="textarea-wrap">
               <textarea id="input-rev" maxlength="1000" rows="4" lang="es"
+                aria-labelledby="label-rev"
                 placeholder="Escribe en español, inglés o francés... para traducirlo al alemán con notas de aprendizaje..."></textarea>
               <button id="clear-rev" class="btn-clear" type="button" hidden aria-label="Limpiar caja de español, inglés o francés">✕</button>
             </div>
