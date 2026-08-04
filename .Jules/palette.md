@@ -1,0 +1,3 @@
+## 2024-05-24 - Semantic labels in custom panels
+**Learning:** Found that custom layout panels for input sections were using `<div>` for headings instead of proper `<label for="...">` tags.
+**Action:** When working on complex UI forms that look like custom panels rather than standard form rows, remember to still use semantic `<label>` tags linked to the `id` of the input to ensure accessibility and better click targets for focus.
