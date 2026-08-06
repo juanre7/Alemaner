@@ -1,0 +1,3 @@
+## 2026-08-06 - Use semantic labels for translation textareas
+**Learning:** Found `<div class="panel-label">` used as labels for the main translation textareas (`#input-de`, `#input-rev`) instead of semantic `<label for="...">` tags. This creates an accessibility issue where screen readers cannot correctly associate the visual label with the input field, and users cannot click the label text to focus the textarea.
+**Action:** Always use semantic `<label for="[id]">` elements instead of styled generic `<div>` elements for any form input, including textareas, to ensure accessibility and valid click-to-focus targets.
