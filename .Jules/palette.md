@@ -1,0 +1,3 @@
+## 2024-05-18 - Semantic Labels in Dual Station
+**Learning:** In the dual translation station (`client/index.html`), the input textareas for German and Spanish/EN/FR were missing semantic labels. The visual labels (`.panel-label`) were implemented as `<div>` elements instead of proper `<label for="...">` elements. This makes it difficult for screen readers to associate the textareas with their intended purpose.
+**Action:** Changed the `<div class="panel-label">` elements to `<label class="panel-label" for="...">` referencing the IDs of their respective textareas (`input-de` and `input-rev`). This adheres to semantic HTML standards for form accessibility as outlined in the memory guidelines.
