@@ -1,0 +1,3 @@
+## 2023-10-27 - Replace UI divs with semantic labels
+**Learning:** Found layout headings above main interaction textareas acting as visual labels (`<div class="panel-label">`) but without semantic connection to the fields. For core interaction areas, non-semantic visual text blocks break a11y focus routing and miss a common UX pattern (clicking text to focus the input box).
+**Action:** Always prefer semantic HTML (`<label for="...">`) over generic structural `<div>` layouts in form contexts to maintain click-to-focus targets and support screen readers, keeping the target tight via `width: fit-content` so it doesn't unexpectedly catch clicks on the whole row.
