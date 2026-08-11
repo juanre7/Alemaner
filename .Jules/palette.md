@@ -1,0 +1,3 @@
+## 2026-08-11 - Semantic labels for form inputs
+**Learning:** Using proper semantic `<label for="...">` elements linked to form inputs (like textareas) is crucial for accessibility. In this app's dual translation station, generic `<div class="panel-label">` were used above the textareas. Replacing them with proper `<label>` elements ensures screen readers correctly associate the label text with the input, and also increases the valid click target area for users to focus the input.
+**Action:** Always prefer semantic HTML elements over styled divs for form elements. When adding text that describes an input, use a `<label>` with a matching `for` attribute.
