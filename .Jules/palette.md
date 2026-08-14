@@ -1,0 +1,3 @@
+## 2024-03-21 - Semantic forms and labels for a11y
+**Learning:** Using generic `<div>` elements for text labels visually looks identical but removes crucial screen-reader context and breaks the native click-to-focus behavior that users expect from form inputs.
+**Action:** When designing or refactoring forms, always use semantic `<label for="[id]">` tags linked directly to their respective `<input>` or `<textarea>` elements, rather than generic `<div>` wrappers. Adding `cursor: pointer` further reinforces this interactivity visually.
