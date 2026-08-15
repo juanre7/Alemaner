@@ -1,0 +1,3 @@
+## 2026-08-15 - Semantic Labels for Textareas
+**Learning:** Found textareas labeled with a generic `<div class="panel-label">` which visually looked like a label but lacked semantic linkage to the input fields. This breaks screen readers and prevents click-to-focus on the label, which is an important accessibility feature on both desktop and mobile.
+**Action:** Replaced `<div>` with `<label>` and explicitly linked them to their corresponding textareas using the `for` attribute and the textarea `id`. Also added `cursor: pointer` via CSS to show users the label is clickable. Always use standard HTML `<label for="...">` instead of visual `<div>` workarounds to ensure correct a11y behaviors out of the box.

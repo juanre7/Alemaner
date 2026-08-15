@@ -1,0 +1,7 @@
+
+> aleman-simultaneo@1.0.0 dev
+> node server/index.js --dev
+
+Alemán Simultáneo [DEV] → http://localhost:8787
+Proveedor: anthropic · Modelo: claude-haiku-4-5-20251001
+Sin clave de servidor: los usuarios deberán usar BYOK (Ajustes).
