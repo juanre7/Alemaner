@@ -1,0 +1,3 @@
+## 2025-01-28 - Semantic Form Labels Provide Click Targets and Screen Reader Support
+**Learning:** Using generic `<div class="label">` elements for inputs prevents screen readers from correctly announcing form fields and prevents users from focusing the field by clicking the label text. The `client/index.html` structure used generic divs for the core translation textareas.
+**Action:** Always replace generic generic `<div>` layouts near inputs with semantic `<label for="[id]">` tags to ensure proper accessibility and usability when building forms.
