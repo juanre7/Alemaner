@@ -1,0 +1,3 @@
+## 2024-05-24 - Enable Click-To-Focus using Semantic `<label>`
+**Learning:** Textareas and inputs should not have preceding pseudo-labels using standard `<div>` elements. This breaks standard a11y associations and removes the default click-to-focus behavior that native semantic `<label>` elements provide.
+**Action:** Use native `<label for="[id]">` rather than generic `<div>` wrappers for visual labels. This automatically expands the click target and provides the appropriate accessible name for screen readers.
