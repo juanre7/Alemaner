@@ -56,6 +56,12 @@ body {
 button { font-family: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: 0.55; }
 
+/* Focus states for keyboard accessibility */
+button:focus-visible, a:focus-visible, .phrase-card:focus-visible {
+  outline: 2px solid var(--amber-500);
+  outline-offset: 2px;
+}
+
 /* ============ Cabecera ============ */
 
 .site-header {
